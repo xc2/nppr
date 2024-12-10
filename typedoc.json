@@ -1,0 +1,21 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "readme": "none",
+  "out": "./docs/api",
+  "plugin": ["typedoc-plugin-markdown"],
+  "hidePageHeader": true,
+  "flattenOutputFiles": true,
+  "indexFormat": "table",
+  "outputFileStrategy": "members",
+  "entryFileName": "index",
+  "excludeInternal": true,
+  "disableSources": true,
+  "excludeProtected": true,
+  "expandParameters": true,
+  "useCodeBlocks": true,
+  "interfacePropertiesFormat": "table",
+  "classPropertiesFormat": "table",
+  "propertyMembersFormat": "table",
+  "parametersFormat": "table"
+}

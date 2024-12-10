@@ -1,0 +1,2 @@
+pnpm --package nano-staged@0.8.0 dlx nano-staged
+#pnpm run docs

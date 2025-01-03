@@ -9,7 +9,9 @@
     "strict": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
-    "target": "ES2022"
-  },
-  "include": ["src"]
+    "target": "ES2022",
+    "noEmit": true,
+    "baseUrl": ".",
+    "types": ["vitest-types"]
+  }
 }

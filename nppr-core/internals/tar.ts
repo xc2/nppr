@@ -1,4 +1,3 @@
-import type { ReadableStream, ReadableWritablePair } from "node:stream/web";
 import { Header, type HeaderData, Pack, ReadEntry, Unpack } from "tar";
 import { readableToBuffer, toReadableStream, toWriteableStream } from "./stream";
 
@@ -7,7 +6,7 @@ export interface TransformOptions extends ReadableWritablePair {
 }
 export type GetTransformer = (entry: ReadEntry) => TransformOptions | undefined | null;
 
-export type TarOptions = ConstructorParameters<typeof Pack>[0];
+export type TarOptions = NonNullable<ConstructorParameters<typeof Pack>[0]>;
 
 function PackJob(pack: Pack, keepOrder = false) {
   let queue: PromiseLike<any> = Promise.resolve();

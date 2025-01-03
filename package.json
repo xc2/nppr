@@ -14,7 +14,6 @@
     "@types/ssri": "^7.1.5",
     "libnpmpublish": "^11.0.0",
     "npm-package-arg": "^12.0.1",
-    "ssri": "^12.0.0",
     "tar": "^7.4.3",
     "typescript": "^5.7.2",
     "vitest-types": "^0.1.0"

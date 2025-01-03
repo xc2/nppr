@@ -36,8 +36,8 @@ export function unstream<T extends Uint8Array | ArrayBuffer | string = Uint8Arra
     async flush(controller) {
       const blob = new Blob(all);
       all = [];
-      const fin = await transform(blob);
-      controller.enqueue(toUint8Array(fin));
+      const fin = toUint8Array(await transform(blob));
+      controller.enqueue(fin);
     },
   });
 }
@@ -59,11 +59,7 @@ export function bufferToReadable(buffer: ArrayBufferLike) {
   });
 }
 export function nullWritable() {
-  return new WritableStream({
-    write() {
-      console.log("write");
-    },
-  });
+  return new WritableStream({});
 }
 
 export async function readableToBuffer(readable: ReadableStream) {

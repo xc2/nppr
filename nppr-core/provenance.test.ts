@@ -1,10 +1,10 @@
-import { BasicTarballPath } from "__fixtures__/tarball";
-import { describe, expect, test } from "vitest";
+import { expect, test } from "vitest";
+import { BasicTarballPath } from "../__fixtures__/tarball";
 import { createReadable } from "./internals/stream";
-import { generateProvenance } from "./provenance";
+import { attest } from "./provenance";
 
-describe("Provenance", () => {
-  test("todo", async () => {
-    await expect(generateProvenance(createReadable(BasicTarballPath))).resolves.toBe({});
-  });
+test("provenance", async () => {
+  await expect(
+    attest({ name: "foo", version: "1.0.0" }, createReadable(BasicTarballPath))
+  ).resolves.toBe(1);
 });

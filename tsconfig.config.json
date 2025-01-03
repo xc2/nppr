@@ -1,8 +1,0 @@
-{
-  "compilerOptions": {
-    "moduleResolution": "Node16",
-    "module": "Node16",
-    "resolveJsonModule": true
-  },
-  "include": ["rslib.config.ts"]
-}

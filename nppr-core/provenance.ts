@@ -1,37 +1,57 @@
-import { createHash } from "node:crypto";
-import { Readable } from "node:stream";
 // @ts-ignore
-import npmProvenance from "libnpmpublish/lib/provenance";
+import { generateProvenance } from "libnpmpublish/lib/provenance";
 import npa from "npm-package-arg";
+import { digestStream } from "./internals/crypto";
 import type { Manifest } from "./internals/npm";
-import { readableToBuffer } from "./internals/stream";
+import { duplicatePackageStream } from "./internals/pkg-stream";
 
-export async function digest(source: ReadableStream) {
-  const hash = createHash("sha512");
-  Readable.fromWeb(source as any).pipe(hash);
-  const foo = await readableToBuffer(Readable.toWeb(hash) as ReadableStream);
-  return foo.toString("hex");
+interface IdentityProvider {
+  getToken: () => Promise<string>;
 }
 
-export async function attest(manifest: Pick<Manifest, "name" | "version">, source: ReadableStream) {
-  const spec = npa.resolve(manifest.name, manifest.version);
-  const subject = {
-    name: npa.toPurl(spec),
-    digest: { sha512: await digest(source) },
+export interface SignOptions {
+  fulcioURL?: string;
+  identityProvider?: IdentityProvider;
+  identityToken?: string;
+  rekorURL?: string;
+  tlogUpload?: boolean;
+  tsaServerURL?: string;
+  legacyCompatibility?: boolean;
+}
+
+export type PayloadSource = ReadableStream;
+export type PayloadManifest = Pick<Manifest, "name" | "version">;
+export interface SubjectPayload {
+  source: PayloadSource;
+  manifest?: PayloadManifest;
+}
+
+export async function attest(sources: (PayloadSource | SubjectPayload)[], opts?: SignOptions) {
+  return generateProvenance(await generateSubjects(sources), {
+    tlogUpload: false,
+    ...opts,
+  });
+}
+
+export function generateSubjects(sources: (PayloadSource | SubjectPayload)[]) {
+  return Promise.all(
+    sources.map(async (p) => {
+      if ("source" in p) return generateSubject(p.source, p.manifest);
+      return generateSubject(p);
+    })
+  );
+}
+
+export async function generateSubject(source: PayloadSource, manifest?: PayloadManifest) {
+  const { readable, manifest: pManifest } = manifest
+    ? { manifest: Promise.resolve(manifest), readable: source }
+    : duplicatePackageStream(source);
+  const hash = await digestStream(readable, "sha512");
+  const { name, version } = await pManifest;
+  const spec = npa.resolve(name, version);
+  return {
+    // @ts-ignore
+    name: npa.toPurl(spec) as string,
+    digest: { sha512: hash.toString("hex") },
   };
-  return npmProvenance.generateProvenance([subject], {});
 }
-
-// export async function _generateProvenance(source: ReadableStream) {
-//   const p = createPackageTransform<{ manifest: Manifest }>((entry, context) => {
-//     if (entry.path === "package/package.json") {
-//       return unstreamText((s) => {
-//         context.manifest = JSON.parse(s) as Manifest;
-//         return s;
-//       });
-//     }
-//   });
-//
-//   await source.pipeThrough(p).pipeTo(nullWritable());
-//   return await p.context;
-// }

@@ -1,4 +1,4 @@
-import { Header, type HeaderData, Pack, ReadEntry, Unpack } from "tar";
+import { Header, type HeaderData, Pack, Parser, ReadEntry } from "tar";
 import { readableToBuffer, toReadableStream, toWriteableStream } from "./stream";
 
 export interface TransformOptions extends ReadableWritablePair {
@@ -60,7 +60,7 @@ export function TarTransformStream(
 ): ReadableWritablePair {
   const pack = new Pack(options?.pack);
   const addEntry = PackJob(pack, options?.keepOrder);
-  const extract = new Unpack({
+  const extract = new Parser({
     ...options?.unpack,
     async onReadEntry(entry) {
       if (options?.unpack?.onReadEntry) {

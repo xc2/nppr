@@ -1,5 +1,8 @@
 import type { ReadEntry } from "tar";
+import type { PayloadSource } from "../provenance";
 import { PackagePackOptions } from "./constants";
+import type { Manifest } from "./npm";
+import { unstreamText } from "./stream";
 import { TarTransformStream } from "./tar";
 
 export interface PkgTransformer<Context = unknown> {
@@ -34,5 +37,19 @@ export function createPackageTransform<Context = unknown>(
     writable: trans.writable,
     readable: es.readable,
     context: result,
+  };
+}
+export function duplicatePackageStream(source: PayloadSource) {
+  const p = createPackageTransform<{ manifest: Manifest }>((entry, context) => {
+    if (entry.path === "package/package.json") {
+      return unstreamText((s) => {
+        context.manifest = JSON.parse(s) as Manifest;
+        return s;
+      });
+    }
+  });
+  return {
+    readable: source.pipeThrough(p),
+    manifest: p.context.then((r) => r.manifest),
   };
 }

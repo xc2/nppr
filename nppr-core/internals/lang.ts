@@ -27,3 +27,20 @@ export function toUint8Array(
   const view = data as Uint8Array;
   return new Uint8Array(view.buffer, byteOffset ?? view.byteOffset, byteLength ?? view.byteLength);
 }
+
+/**
+ * Concatenate multiple Uint8Array or ArrayBuffer into a single ArrayBuffer
+ * @param arrays
+ */
+export function concatBuffer(arrays: (Uint8Array | ArrayBuffer)[]) {
+  const views = arrays.map((a) => toUint8Array(a));
+
+  const totalLength = views.reduce((sum, view) => sum + view.byteLength, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const view of views) {
+    result.set(view, offset);
+    offset += view.byteLength;
+  }
+  return result.buffer;
+}

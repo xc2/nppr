@@ -1,9 +1,10 @@
 import { Header, type HeaderData, Pack, Parser, ReadEntry } from "tar";
-import { readableToBuffer, toReadableStream, toWriteableStream } from "./stream";
+import { DataStream, readableToBuffer, toReadableStream, toWriteableStream } from "./stream";
 
 export interface TransformOptions extends ReadableWritablePair {
   size?: number;
 }
+
 export type GetTransformer = (entry: ReadEntry) => TransformOptions | undefined | null;
 
 export type TarOptions = NonNullable<ConstructorParameters<typeof Pack>[0]>;
@@ -48,7 +49,7 @@ function getEntry(_header: HeaderData, readable: ReadableStream) {
       const buf = await readableToBuffer(readable);
       const header = new Header({ ..._header, size: buf.byteLength });
       const entry = new ReadEntry(header);
-      entry.end(buf);
+      entry.end(Buffer.from(buf));
       return entry;
     })();
   }
@@ -94,4 +95,38 @@ export function TarTransformStream(
     readable: toReadableStream(pack),
     writable: toWriteableStream(extract),
   };
+}
+
+export async function* iterEntries(source: ReadableStream) {
+  const extract = new Parser();
+  const readEntry = () => {
+    return new Promise<ReadEntry>((resolve, reject) => {
+      extract.once("entry", resolve);
+    });
+  };
+  try {
+    const pEnd = new Promise<void>((resolve, reject) => {
+      extract.once("finish", () => resolve());
+      extract.once("abort", () => resolve());
+      extract.once("error", reject);
+    });
+    let pEntry = readEntry();
+    source.pipeTo(toWriteableStream(extract));
+    while (true) {
+      const next = await Promise.race([pEnd, pEntry]);
+      if (!next) {
+        break;
+      }
+      pEntry = readEntry();
+      yield [next, DataStream(next)] as const;
+      if (!next.emittedEnd) {
+        next.on("data", () => {});
+      }
+    }
+  } finally {
+    extract.removeAllListeners();
+    try {
+      extract.abort({ name: "ITER_RETURN", message: "Aborted by iterEntries" });
+    } catch {}
+  }
 }

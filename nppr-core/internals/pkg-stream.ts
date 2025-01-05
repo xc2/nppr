@@ -3,7 +3,7 @@ import type { PayloadSource } from "../provenance";
 import { PackagePackOptions } from "./constants";
 import type { Manifest } from "./npm";
 import { unstreamText } from "./stream";
-import { TarTransformStream } from "./tar";
+import { TarTransformStream, readEntries } from "./tar";
 
 export interface PkgTransformer<Context = unknown> {
   (entry: ReadEntry, context: Partial<Context>): ReadableWritablePair | undefined | null;
@@ -52,4 +52,8 @@ export function duplicatePackageStream(source: PayloadSource) {
     readable: source.pipeThrough(p),
     manifest: p.context.then((r) => r.manifest),
   };
+}
+
+export async function readPackageManifest(source: PayloadSource) {
+  const entries = await readEntries(source, { filter: ["package/package.json"] });
 }

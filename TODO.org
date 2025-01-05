@@ -1,5 +1,6 @@
 * to-do-list
 ** TODO implement `duplicateStream`
+
 #+BEGIN_SRC typescript
 declare function duplicateStream(s: ReadableStream): [ReadableStream, ReadableStream]
 
@@ -7,3 +8,5 @@ const [source, sourceToBeUsed] = duplicateStream(s)
 const digest = digestStream(sourceToBeUsed)
 return source
 #+END_SRC
+
+Sorry there's already `ReadableStream#tee` in the standard library. I'll use that instead.

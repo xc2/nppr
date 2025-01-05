@@ -1,6 +1,6 @@
 import { createReadStream } from "node:fs";
 import { PassThrough, Readable, Writable } from "node:stream";
-import { toUint8Array } from "./lang";
+import { concatBuffer, toUint8Array } from "./lang";
 
 export function toReadableStream<T extends Pick<NodeJS.ReadableStream, "pipe">>(pass: T) {
   if (pass instanceof Readable) {
@@ -58,9 +58,6 @@ export function bufferToReadable(buffer: ArrayBufferLike) {
     },
   });
 }
-export function nullWritable() {
-  return new WritableStream({});
-}
 
 export async function readableToBuffer(readable: ReadableStream) {
   const reader = readable.getReader();
@@ -72,7 +69,7 @@ export async function readableToBuffer(readable: ReadableStream) {
     }
     chunks.push(value);
   }
-  return Buffer.concat(chunks);
+  return concatBuffer(chunks);
 }
 
 export function createReadable(
@@ -86,4 +83,23 @@ export function createReadable(
   }
 
   return bufferToReadable(filePathOrBuffer);
+}
+
+export function DataStream(source: Pick<NodeJS.ReadableStream, "pipe"> | ReadableStream) {
+  const readable: ReadableStream = "pipe" in source ? toReadableStream(source) : source;
+  const create = (readable: ReadableStream) => {
+    const arrayBuffer: Response["arrayBuffer"] = () => readableToBuffer(readable);
+    const text: Response["text"] = async () => new TextDecoder().decode(await arrayBuffer());
+    const json: Response["json"] = async () => JSON.parse(await text());
+    const tee = () => readable.tee().map(create);
+    return {
+      readable,
+      arrayBuffer,
+      text,
+      json,
+      tee,
+    };
+  };
+
+  return create(readable);
 }

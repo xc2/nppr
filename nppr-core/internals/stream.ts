@@ -85,21 +85,24 @@ export function createReadable(
   return bufferToReadable(filePathOrBuffer);
 }
 
-export function DataStream(source: Pick<NodeJS.ReadableStream, "pipe"> | ReadableStream) {
-  const readable: ReadableStream = "pipe" in source ? toReadableStream(source) : source;
-  const create = (readable: ReadableStream) => {
-    const arrayBuffer: Response["arrayBuffer"] = () => readableToBuffer(readable);
-    const text: Response["text"] = async () => new TextDecoder().decode(await arrayBuffer());
-    const json: Response["json"] = async () => JSON.parse(await text());
-    const tee = () => readable.tee().map(create);
-    return {
-      readable,
-      arrayBuffer,
-      text,
-      json,
-      tee,
-    };
-  };
+export interface StreamReader {
+  readable: ReadableStream;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+  text: () => Promise<string>;
+  json: () => Promise<any>;
+  tee: () => [StreamReader, StreamReader];
+}
 
-  return create(readable);
+export function toStreamReader(readable: ReadableStream): StreamReader {
+  const arrayBuffer: Response["arrayBuffer"] = () => readableToBuffer(readable);
+  const text: Response["text"] = async () => new TextDecoder().decode(await arrayBuffer());
+  const json: Response["json"] = async () => JSON.parse(await text());
+  const tee = () => readable.tee().map(toStreamReader) as [StreamReader, StreamReader];
+  return {
+    readable,
+    arrayBuffer,
+    text,
+    json,
+    tee,
+  };
 }

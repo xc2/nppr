@@ -1,5 +1,11 @@
 import { Header, type HeaderData, Pack, Parser, ReadEntry } from "tar";
-import { DataStream, readableToBuffer, toReadableStream, toWriteableStream } from "./stream";
+import {
+  type StreamReader,
+  readableToBuffer,
+  toReadableStream,
+  toStreamReader,
+  toWriteableStream,
+} from "./stream";
 
 export interface TransformOptions extends ReadableWritablePair {
   size?: number;
@@ -97,6 +103,35 @@ export function TarTransformStream(
   };
 }
 
+export function transformTarball(
+  transform?: (
+    entry: ReadEntry,
+    reader: StreamReader
+  ) => PromiseLike<ReadableStream | Blob | undefined | false> | undefined | false,
+  options?: TarOptions
+) {
+  const pack = new Pack(options);
+  const { readable, writable } = new TransformStream();
+  void (async () => {
+    for await (const [entry, reader] of iterEntries(readable)) {
+      const res = (await transform?.(entry, reader)) || reader.readable;
+
+      const [stream, size] = "size" in res ? [res.stream(), res.size] : [res, entry.header.size];
+      const header = new Header({ ...entry.header, size });
+      const newEntry = new ReadEntry(header);
+      const p = stream.pipeTo(toWriteableStream(newEntry as unknown as NodeJS.WritableStream));
+      pack.add(newEntry);
+      await p;
+    }
+    console.log("pack end");
+    pack.end();
+  })();
+  return {
+    readable: toReadableStream(pack),
+    writable,
+  };
+}
+
 export async function* iterEntries(source: ReadableStream) {
   const extract = new Parser();
   const readEntry = () => {
@@ -118,7 +153,8 @@ export async function* iterEntries(source: ReadableStream) {
         break;
       }
       pEntry = readEntry();
-      yield [next, DataStream(next)] as const;
+      yield [next, toStreamReader(toReadableStream(next))] as const;
+      console.log("end", next.path);
       if (!next.emittedEnd) {
         next.on("data", () => {});
       }

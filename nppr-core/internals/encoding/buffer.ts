@@ -5,7 +5,7 @@
  * @param byteLength
  */
 export function toUint8Array(
-  data: ArrayBuffer | Uint8Array | number | string | Array<number> | ArrayBufferLike,
+  data: number | string | Array<number> | ArrayBufferLike | ArrayBufferView,
   byteOffset?: number,
   byteLength?: number
 ) {
@@ -18,14 +18,18 @@ export function toUint8Array(
       data = Uint8Array.from(data as string, (c) => c.charCodeAt(0));
     }
   }
-  if (data instanceof ArrayBuffer) {
-    return new Uint8Array(data, byteOffset, byteLength);
-  }
+
   if (Array.isArray(data)) {
     data = new Uint8Array(data);
   }
-  const view = data as Uint8Array;
-  return new Uint8Array(view.buffer, byteOffset ?? view.byteOffset, byteLength ?? view.byteLength);
+  if ("buffer" in data) {
+    return new Uint8Array(
+      data.buffer,
+      byteOffset ?? data.byteOffset,
+      byteLength ?? data.byteLength
+    );
+  }
+  return new Uint8Array(data, byteOffset, byteLength);
 }
 
 /**

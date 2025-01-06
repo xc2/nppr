@@ -4,6 +4,7 @@ import npa from "npm-package-arg";
 import { digestStream } from "./internals/crypto";
 import { toHex } from "./internals/encoding";
 import { type Manifest, getManifest } from "./internals/package";
+import { type InputSource, inputSource } from "./utils";
 
 interface IdentityProvider {
   getToken: () => Promise<string>;
@@ -19,7 +20,7 @@ export interface SignOptions {
   legacyCompatibility?: boolean;
 }
 
-export type PayloadSource = ReadableStream;
+export type PayloadSource = InputSource;
 export type PayloadManifest = Pick<Manifest, "name" | "version">;
 export interface SubjectPayload {
   source: PayloadSource;
@@ -36,13 +37,14 @@ export async function attest(sources: (PayloadSource | SubjectPayload)[], opts?:
 export function generateSubjects(sources: (PayloadSource | SubjectPayload)[]) {
   return Promise.all(
     sources.map(async (p) => {
-      if ("source" in p) return generateSubject(p.source, p.manifest);
+      if (typeof p === "object" && "source" in p) return generateSubject(p.source, p.manifest);
       return generateSubject(p);
     })
   );
 }
 
 export async function generateSubject(source: PayloadSource, manifest?: PayloadManifest) {
+  source = inputSource(source);
   if (!manifest) {
     const [source1, source2] = source.tee();
     source = source1;

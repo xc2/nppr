@@ -33,8 +33,11 @@ export async function publish(
 }
 
 export function getPublishManifest(manifest: Manifest, options = {} as ManifestPublishOptions) {
+  manifest = JSON.parse(JSON.stringify(manifest));
   const r = {} as Manifest;
-  if (options.keepFields !== true) {
+  if (options.keepFields === true) {
+    Object.assign(r, manifest);
+  } else {
     const extraFields = Array.isArray(options.keepFields) ? options.keepFields : [];
     for (const field of new Set([...(extraFields || []), ...getPublishManifestFields()])) {
       if (field in manifest) {

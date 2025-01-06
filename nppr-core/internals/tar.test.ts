@@ -6,17 +6,17 @@ import {
 } from "tests/__fixtures__/tarball";
 import { test } from "tests/vitest";
 import { describe, expect, vi } from "vitest";
+import { inputSource } from "../utils";
 import { PackagePackOptions } from "./constants";
 import { digestStream } from "./crypto";
 import { findMapAsync } from "./lang";
 import type { Manifest } from "./package";
-import { createReadable } from "./stream";
 import { iterEntries, transformTarball } from "./tar";
 
 describe("iterEntries", () => {
   test("iterator should return early on loop break", async () => {
     const fn = vi.fn();
-    const iter = iterEntries(createReadable(BasicTarballPath), {
+    const iter = iterEntries(inputSource(BasicTarballPath), {
       onReadEntry: fn,
     });
     let iterCount = 0;
@@ -37,7 +37,7 @@ describe("iterEntries", () => {
 
   test("can read data on loop", async () => {
     const manifest = (async () => {
-      for await (const [entry, reader] of iterEntries(createReadable(BasicTarballPath))) {
+      for await (const [entry, reader] of iterEntries(inputSource(BasicTarballPath))) {
         if (entry.path === "package/package.json") {
           return reader.json();
         }
@@ -50,12 +50,12 @@ describe("iterEntries", () => {
 
 describe("transformTarball", () => {
   test("tarball should keep as is if no transform is provided", async () => {
-    const source1 = createReadable(BasicTarballPath);
+    const source1 = inputSource(BasicTarballPath);
     const output = source1.pipeThrough(transformTarball(undefined, PackagePackOptions));
     await expect(digestStream(output)).resolves.toStrictEqual(BasicTarballSHA512);
   });
   test("tarball should keep as is if all entry is not changed", async () => {
-    const source1 = createReadable(BasicTarballPath);
+    const source1 = inputSource(BasicTarballPath);
     const output = source1.pipeThrough(
       transformTarball(async (entry, reader) => {
         if (entry.path === "package/package.json") {
@@ -73,7 +73,7 @@ describe("transformTarball", () => {
       }
       return order;
     };
-    const [source1, source2] = createReadable(BasicTarballPath).tee();
+    const [source1, source2] = inputSource(BasicTarballPath).tee();
     const output = source1.pipeThrough(
       transformTarball(async (entry, reader) => {
         if (entry.path === "package/package.json") {
@@ -87,7 +87,7 @@ describe("transformTarball", () => {
   });
 
   test("transforming should work", async () => {
-    const source1 = createReadable(BasicTarballPath);
+    const source1 = inputSource(BasicTarballPath);
     const output = source1.pipeThrough(
       transformTarball(async (entry, reader) => {
         if (entry.path === "package/package.json") {

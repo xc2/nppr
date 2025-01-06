@@ -1,4 +1,3 @@
-import { createReadStream } from "node:fs";
 import { PassThrough, Readable, Writable } from "node:stream";
 import { concatBuffer, toUint8Array } from "./encoding";
 
@@ -25,8 +24,9 @@ export function toWriteableStream<T extends NodeJS.WritableStream>(pass: T) {
   }
 }
 
-export function bufferToReadable(buffer: ArrayBufferLike) {
+export function bufferToReadable(buffer: ArrayBufferView | ArrayBufferLike) {
   return new ReadableStream({
+    type: "bytes",
     pull(controller) {
       controller.enqueue(toUint8Array(buffer));
       controller.close();
@@ -45,19 +45,6 @@ export async function readableToBuffer(readable: ReadableStream) {
     chunks.push(value);
   }
   return concatBuffer(chunks);
-}
-
-export function createReadable(
-  filePathOrBuffer: string | Buffer | Uint8Array | ArrayBufferLike | ReadableStream
-): ReadableStream {
-  if (typeof filePathOrBuffer === "string") {
-    return Readable.toWeb(createReadStream(filePathOrBuffer)) as ReadableStream;
-  }
-  if ("getReader" in filePathOrBuffer) {
-    return filePathOrBuffer;
-  }
-
-  return bufferToReadable(filePathOrBuffer);
 }
 
 export interface StreamReader {

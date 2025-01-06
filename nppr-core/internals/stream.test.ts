@@ -3,7 +3,6 @@ import { test } from "tests/vitest";
 import { describe, expect } from "vitest";
 import {
   bufferToReadable,
-  createReadable,
   readableToBuffer,
   toReadableStream,
   toStreamReader,
@@ -24,21 +23,6 @@ describe("stream utility functions", () => {
     test("should convert ReadableStream to buffer", async () => {
       const buffer = new Uint8Array([1, 2, 3, 4]).buffer;
       const readable = bufferToReadable(buffer);
-      const result = await readableToBuffer(readable);
-      expect(new Uint8Array(result)).toEqual(new Uint8Array([1, 2, 3, 4]));
-    });
-  });
-
-  describe("createReadable", () => {
-    test("should create ReadableStream from file path", () => {
-      const filePath = "path/to/file";
-      const readable = createReadable(filePath);
-      expect(readable).toBeInstanceOf(ReadableStream);
-    });
-
-    test("should create ReadableStream from buffer", async () => {
-      const buffer = new Uint8Array([1, 2, 3, 4]).buffer;
-      const readable = createReadable(buffer);
       const result = await readableToBuffer(readable);
       expect(new Uint8Array(result)).toEqual(new Uint8Array([1, 2, 3, 4]));
     });

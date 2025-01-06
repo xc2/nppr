@@ -4,8 +4,8 @@ import { generateProvenance } from "libnpmpublish/lib/provenance";
 import { BasicTarballPath, BasicTarballSubject } from "tests/__fixtures__/tarball";
 import { mockImplementation, test } from "tests/vitest";
 import { afterAll, describe, expect, vi } from "vitest";
-import { createReadable } from "./internals/stream";
 import { attest, generateSubject, generateSubjects } from "./provenance";
+import { inputSource } from "./utils";
 
 vi.mock("libnpmpublish/lib/provenance", { spy: true });
 
@@ -15,13 +15,13 @@ afterAll(() => {
 
 describe("Provenance Subject", () => {
   test("generateSubject", async () => {
-    await expect(generateSubject(createReadable(BasicTarballPath))).resolves.toStrictEqual(
+    await expect(generateSubject(inputSource(BasicTarballPath))).resolves.toStrictEqual(
       BasicTarballSubject
     );
   });
   test("generateSubject with preload manifest", async () => {
     await expect(
-      generateSubject(createReadable(BasicTarballPath), { name: "foobar", version: "1.1.1" })
+      generateSubject(inputSource(BasicTarballPath), { name: "foobar", version: "1.1.1" })
     ).resolves.toStrictEqual({
       ...BasicTarballSubject,
       name: "pkg:npm/foobar@1.1.1",
@@ -30,9 +30,9 @@ describe("Provenance Subject", () => {
   test("generateSubjects", async () => {
     await expect(
       generateSubjects([
-        createReadable(BasicTarballPath),
+        inputSource(BasicTarballPath),
         {
-          source: createReadable(BasicTarballPath),
+          source: inputSource(BasicTarballPath),
           manifest: { name: "foobar", version: "1.1.1" },
         },
       ])
@@ -47,7 +47,7 @@ describe("Provenance Attest", () => {
   test("attest with default options", async ({ signal }) => {
     mockImplementation(generateProvenance, async (...args: any[]) => args, signal);
 
-    await expect(attest([createReadable(BasicTarballPath)])).resolves.toStrictEqual([
+    await expect(attest([inputSource(BasicTarballPath)])).resolves.toStrictEqual([
       [BasicTarballSubject],
       { tlogUpload: false },
     ]);
@@ -55,7 +55,7 @@ describe("Provenance Attest", () => {
   test("attest with options", async ({ signal }) => {
     mockImplementation(generateProvenance, async (...args: any[]) => args, signal);
     await expect(
-      attest([createReadable(BasicTarballPath)], { tlogUpload: true, identityToken: "a" })
+      attest([inputSource(BasicTarballPath)], { tlogUpload: true, identityToken: "a" })
     ).resolves.toStrictEqual([[BasicTarballSubject], { tlogUpload: true, identityToken: "a" }]);
   });
 });

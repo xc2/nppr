@@ -1,11 +1,11 @@
 import compare from "just-compare";
 import { PackagePackOptions } from "./internals/constants";
 import { type Manifest, mutateDependencies, mutateFields } from "./internals/package";
-import { createReadable } from "./internals/stream";
 import { type TarTransformer, transformTarball } from "./internals/tar";
+import { type InputSource, inputSource } from "./utils";
 
 export interface RepackPackage extends RepackOptions {
-  source: string | Buffer | Uint8Array | ArrayBufferLike | ReadableStream;
+  source: InputSource;
 }
 
 export function repack(packages: RepackPackage, config?: RepackOptions): ReadableStream;
@@ -18,13 +18,13 @@ export function repack(
   const rs = ps.map((pkg) => {
     const options = { ...config, ...pkg, remap: { ...config.remapDeps, ...pkg.remapDeps } };
     const p = createRepack(options);
-    createReadable(pkg.source).pipeThrough(p);
+    inputSource(pkg.source).pipeThrough(p);
 
     return p.readable;
   });
   return Array.isArray(packages) ? rs : rs[0];
 }
-export interface ManifestTransformer {
+export interface PackageJsonTransformer {
   (pkg: Manifest): Manifest | undefined;
 }
 
@@ -32,7 +32,7 @@ export interface RepackOptions {
   name?: string;
   version?: string;
   remapDeps?: Record<string, string>;
-  manifest?: Manifest | ManifestTransformer;
+  packageJson?: Manifest | PackageJsonTransformer;
   transform?: TarTransformer;
 }
 
@@ -41,12 +41,12 @@ export function createRepack(options: RepackOptions = {}) {
     if (entry.path === "package/package.json") {
       const text = await reader.text();
       let manifest = JSON.parse(text) as Manifest;
-      if (options.manifest) {
-        if (typeof options.manifest === "function") {
-          const r = options.manifest(manifest);
+      if (options.packageJson) {
+        if (typeof options.packageJson === "function") {
+          const r = options.packageJson(manifest);
           if (r) manifest = r;
         } else {
-          manifest = options.manifest;
+          manifest = options.packageJson;
         }
       }
       mutateFields(manifest, {

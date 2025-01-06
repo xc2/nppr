@@ -1,6 +1,6 @@
-import type { TarOptions } from "./tar";
-
 export const PackagePackOptions = {
   gzip: { level: 9 },
   portable: true,
-} satisfies TarOptions;
+} as const;
+
+export const PackageJsonPath = "package/package.json";

@@ -8,9 +8,6 @@ export interface RepackPackage extends RepackOptions {
   source: string | Buffer | Uint8Array | ArrayBufferLike | ReadableStream;
 }
 
-export interface RepackConfig extends Pick<RepackOptions, "remapDeps" | "transform" | "manifest"> {
-  packages: RepackPackage[];
-}
 export function repack(packages: RepackPackage, config?: RepackOptions): ReadableStream;
 export function repack(packages: RepackPackage[], config?: RepackOptions): ReadableStream[];
 export function repack(

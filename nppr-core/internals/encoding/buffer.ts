@@ -44,3 +44,13 @@ export function concatBuffer(arrays: (Uint8Array | ArrayBuffer)[]) {
   }
   return result.buffer;
 }
+
+export function sliceView<T extends ArrayBufferLike>(view: ArrayBufferView<T>) {
+  return view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength);
+}
+
+export function toHex(buffer: ArrayBufferLike) {
+  return Array.from(new Uint8Array(buffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}

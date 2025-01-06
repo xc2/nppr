@@ -1,6 +1,6 @@
 import { createReadStream } from "node:fs";
 import { PassThrough, Readable, Writable } from "node:stream";
-import { concatBuffer, toUint8Array } from "./lang";
+import { concatBuffer, toUint8Array } from "./encoding";
 
 export function toReadableStream<T extends Pick<NodeJS.ReadableStream, "pipe">>(pass: T) {
   if (pass instanceof Readable) {
@@ -23,31 +23,6 @@ export function toWriteableStream<T extends NodeJS.WritableStream>(pass: T) {
     passThrough.pipe(pass);
     return Writable.toWeb(passThrough) as WritableStream;
   }
-}
-
-export function unstream<T extends Uint8Array | ArrayBuffer | string = Uint8Array>(
-  transform: (data: Blob) => T | PromiseLike<T>
-) {
-  let all: T[] = [];
-  return new TransformStream<T>({
-    transform(chunk) {
-      all.push(chunk);
-    },
-    async flush(controller) {
-      const blob = new Blob(all);
-      all = [];
-      const fin = toUint8Array(await transform(blob));
-      controller.enqueue(fin);
-    },
-  });
-}
-
-export function unstreamText(transform: (data: string) => string | PromiseLike<string>) {
-  return unstream(async (blob) => {
-    const text = new TextDecoder().decode(await blob.arrayBuffer());
-
-    return new TextEncoder().encode(await transform(text));
-  });
 }
 
 export function bufferToReadable(buffer: ArrayBufferLike) {
@@ -89,7 +64,7 @@ export interface StreamReader {
   readable: ReadableStream;
   arrayBuffer: () => Promise<ArrayBuffer>;
   text: () => Promise<string>;
-  json: () => Promise<any>;
+  json: <T = any>() => Promise<T>;
   tee: () => [StreamReader, StreamReader];
 }
 

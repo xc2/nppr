@@ -1,66 +1,67 @@
-import { type Manifest, createDepsTransformer, createFieldsTransformer } from "./internals/npm";
-import { type PkgTransformer, createPackageTransform } from "./internals/pkg-stream";
-import { createReadable, unstreamText } from "./internals/stream";
+import compare from "just-compare";
+import { PackagePackOptions } from "./internals/constants";
+import { type Manifest, mutateDependencies, mutateFields } from "./internals/package";
+import { createReadable } from "./internals/stream";
+import { type TarTransformer, transformTarball } from "./internals/tar";
 
 export interface RepackPackage extends RepackOptions {
   source: string | Buffer | Uint8Array | ArrayBufferLike | ReadableStream;
 }
 
-export interface RepackConfig extends Pick<RepackOptions, "remap" | "transform" | "manifest"> {
+export interface RepackConfig extends Pick<RepackOptions, "remapDeps" | "transform" | "manifest"> {
   packages: RepackPackage[];
 }
-export function repack(config: RepackConfig) {
-  return config.packages.map((pkg) => {
-    const options = { ...config, ...pkg, remap: { ...config.remap, ...pkg.remap } };
+export function repack(packages: RepackPackage, config?: RepackOptions): ReadableStream;
+export function repack(packages: RepackPackage[], config?: RepackOptions): ReadableStream[];
+export function repack(
+  packages: RepackPackage | RepackPackage[],
+  config: RepackOptions = {}
+): ReadableStream | ReadableStream[] {
+  const ps = Array.isArray(packages) ? packages : [packages];
+  const rs = ps.map((pkg) => {
+    const options = { ...config, ...pkg, remap: { ...config.remapDeps, ...pkg.remapDeps } };
     const p = createRepack(options);
     createReadable(pkg.source).pipeThrough(p);
-    const { writable, ...r } = p;
 
-    return r;
+    return p.readable;
   });
-}
-export interface RepackContext {
-  manifest: Manifest;
+  return Array.isArray(packages) ? rs : rs[0];
 }
 export interface ManifestTransformer {
-  (pkg: Manifest): Manifest | false;
+  (pkg: Manifest): Manifest | undefined;
 }
 
 export interface RepackOptions {
   name?: string;
   version?: string;
-  remap?: Record<string, string>;
+  remapDeps?: Record<string, string>;
   manifest?: Manifest | ManifestTransformer;
-  transform?: PkgTransformer;
+  transform?: TarTransformer;
 }
 
 export function createRepack(options: RepackOptions = {}) {
-  const manifestTransformers: ((pkg: Manifest) => Manifest | false)[] = [];
-  if (typeof options.manifest === "function") {
-    manifestTransformers.push(options.manifest);
-  } else if (options.manifest) {
-    manifestTransformers.push(() => options.manifest as Manifest);
-  }
-  manifestTransformers.push(
-    createFieldsTransformer({ name: options.name, version: options.version })
-  );
-  if (options.remap) manifestTransformers.push(createDepsTransformer(options.remap));
-
-  return createPackageTransform<RepackContext>((entry, context) => {
+  return transformTarball(async (entry, reader) => {
     if (entry.path === "package/package.json") {
-      return unstreamText((s) => {
-        context.manifest = JSON.parse(s) as Manifest;
-        let changed = false;
-        for (const transformer of manifestTransformers) {
-          const fin = transformer(context.manifest);
-          if (fin) {
-            context.manifest = fin;
-            changed = true;
-          }
+      const text = await reader.text();
+      let manifest = JSON.parse(text) as Manifest;
+      if (options.manifest) {
+        if (typeof options.manifest === "function") {
+          const r = options.manifest(manifest);
+          if (r) manifest = r;
+        } else {
+          manifest = options.manifest;
         }
-        return changed ? JSON.stringify(context.manifest) : s;
+      }
+      mutateFields(manifest, {
+        name: options.name,
+        version: options.version,
+      });
+      mutateDependencies(manifest, options.remapDeps);
+      const unchanged = compare(JSON.parse(text), manifest);
+      return new Blob([unchanged ? text : JSON.stringify(manifest, null, 2)], {
+        type: "application/json",
       });
     }
-    return options?.transform?.(entry, context);
-  });
+    return options.transform?.(entry, reader);
+  }, PackagePackOptions);
 }

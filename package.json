@@ -12,6 +12,7 @@
     "@types/node": "^22.10.5",
     "@types/npm-package-arg": "^6.1.4",
     "@types/ssri": "^7.1.5",
+    "cac": "^6.7.14",
     "just-compare": "^2.3.0",
     "libnpmpublish": "^11.0.0",
     "npm-package-arg": "^12.0.1",

@@ -20,7 +20,7 @@ cli.help((sections) => {
   for (let i = sections.length; i--; i > -1) {
     if (
       ["Commands", "For more info, run any command with the `--help` flag"].includes(
-        sections[i].title
+        sections[i].title ?? ""
       )
     ) {
       sections.splice(i, 1);

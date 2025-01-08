@@ -3,6 +3,7 @@ import { bufferToReadable, toReadableStream } from "./internals/stream";
 
 export type InputSource =
   | string
+  | number
   | Blob
   | File
   | ReadableStream
@@ -14,6 +15,13 @@ export function inputSource(source: InputSource): ReadableStream {
   if (typeof source === "string") {
     // file path
     return toReadableStream(createReadStream(source));
+  }
+  if (typeof source === "number") {
+    const builtins: Record<string, NodeJS.ReadableStream> = {
+      [process.stdin.fd]: process.stdin,
+    };
+    // file descriptor
+    return toReadableStream(builtins[source] ?? createReadStream("", { fd: source }));
   }
   if ("pipe" in source) {
     // nodejs stream

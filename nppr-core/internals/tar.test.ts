@@ -11,6 +11,7 @@ import { PackagePackOptions } from "./constants";
 import { digestStream } from "./crypto";
 import { findMapAsync } from "./lang";
 import type { Manifest } from "./package";
+import { duplicate } from "./stream";
 import { iterEntries, transformTarball } from "./tar";
 
 describe("iterEntries", () => {
@@ -73,17 +74,18 @@ describe("transformTarball", () => {
       }
       return order;
     };
-    const [source1, source2] = inputSource(BasicTarballPath).tee();
-    const output = source1.pipeThrough(
-      transformTarball(async (entry, reader) => {
-        if (entry.path === "package/package.json") {
-          await new Promise((resolve) => setTimeout(resolve, 50));
-          return new Blob([await reader.text()]);
-        }
-      }, PackagePackOptions)
+    const [source, output] = duplicate(inputSource(BasicTarballPath), (source) =>
+      source.pipeThrough(
+        transformTarball(async (entry, reader) => {
+          if (entry.path === "package/package.json") {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            return new Blob([await reader.text()]);
+          }
+        }, PackagePackOptions)
+      )
     );
 
-    await expect(getOrder(output)).resolves.toStrictEqual(await getOrder(source2));
+    await expect(getOrder(output)).resolves.toStrictEqual(await getOrder(source));
   });
 
   test("transforming should work", async () => {
@@ -95,10 +97,10 @@ describe("transformTarball", () => {
         }
       }, PackagePackOptions)
     );
-    const [output1, output2] = output.tee();
+    const [output1, digest] = duplicate(output, digestStream);
     // @ts-ignore
-    await expect(digestStream(output1)).resolves.not.toStrictEqual(BasicTarballSHA512);
-    const manifest = findMapAsync(iterEntries(output2), async ([entry, reader]) => {
+    await expect(digest).resolves.not.toStrictEqual(BasicTarballSHA512);
+    const manifest = findMapAsync(iterEntries(output1), async ([entry, reader]) => {
       if (entry.path === "package/package.json") {
         return reader.json<Manifest>();
       }

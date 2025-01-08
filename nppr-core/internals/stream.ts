@@ -12,6 +12,7 @@ export function toReadableStream<T extends Pick<NodeJS.ReadableStream, "pipe">>(
     return Readable.toWeb(passThrough) as ReadableStream;
   }
 }
+
 export function toWriteableStream<T extends NodeJS.WritableStream>(pass: T) {
   if (pass instanceof Writable) {
     return Writable.toWeb(pass) as WritableStream;
@@ -45,6 +46,28 @@ export async function readableToBuffer(readable: ReadableStream) {
     chunks.push(value);
   }
   return concatBuffer(chunks);
+}
+
+type ReadableStreamHandler<T> = (r: ReadableStream) => T;
+type F<T extends ReadableStreamHandler<unknown>[]> = T extends [
+  ReadableStreamHandler<infer A>,
+  ...infer B,
+]
+  ? [A, ...(B extends ReadableStreamHandler<unknown>[] ? F<B> : [])]
+  : [];
+
+export function duplicate<T extends ReadableStreamHandler<unknown>[]>(
+  readable: ReadableStream,
+  ...handlers: T
+) {
+  let source = readable;
+  const results = [] as any;
+  for (const handler of handlers) {
+    const [a, b] = source.tee();
+    source = a;
+    results.push(handler(b));
+  }
+  return [source, ...results] as [ReadableStream, ...F<T>];
 }
 
 export interface StreamReader {

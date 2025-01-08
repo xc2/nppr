@@ -24,12 +24,11 @@ export type PayloadSource = InputSource;
 export type PayloadManifest = Pick<Manifest, "name" | "version">;
 export interface SubjectPayload {
   source: PayloadSource;
-  manifest?: PayloadManifest;
+  manifest?: PayloadManifest | PromiseLike<PayloadManifest>;
 }
 
 export async function attest(sources: (PayloadSource | SubjectPayload)[], opts?: SignOptions) {
   return generateProvenance(await generateSubjects(sources), {
-    tlogUpload: false,
     ...opts,
   });
 }
@@ -37,21 +36,25 @@ export async function attest(sources: (PayloadSource | SubjectPayload)[], opts?:
 export function generateSubjects(sources: (PayloadSource | SubjectPayload)[]) {
   return Promise.all(
     sources.map(async (p) => {
-      if (typeof p === "object" && "source" in p) return generateSubject(p.source, p.manifest);
+      if (typeof p === "object" && "source" in p)
+        return generateSubject(p.source, await p.manifest);
       return generateSubject(p);
     })
   );
 }
 
-export async function generateSubject(source: PayloadSource, manifest?: PayloadManifest) {
+export async function generateSubject(
+  source: PayloadSource,
+  manifest?: PayloadManifest | PromiseLike<PayloadManifest>
+) {
   source = inputSource(source);
   if (!manifest) {
     const [source1, source2] = source.tee();
     source = source1;
-    manifest = await getManifest(source2);
+    manifest = getManifest(source2);
   }
   const hash = await digestStream(source, "sha512");
-  const { name, version } = manifest;
+  const { name, version } = await manifest;
   const spec = npa.resolve(name, version);
   return {
     // @ts-ignore

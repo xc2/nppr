@@ -3,3 +3,4 @@
 ** TODO support web
 - [ ] No [[https://github.com/isaacs/node-tar][=node-tar=]] compatible tar library that supports web :BLOCK:
 - [ ] Separate codes that depends =node:= modules and import via =#mod=
+** TODO support template for repack name

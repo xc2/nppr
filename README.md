@@ -25,7 +25,7 @@ This usually happens in the CI/CD pipeline.
 
 This also supports multiple packages in single provenance file. (Not tested yet)
 
-### 3. Publishing the package with tarball file and pre-generated provenance file.
+### 3. Publishing the package with provenance anywhere
 
 So you could publish the package anywhere you want **without losing the provenance attached**.
 

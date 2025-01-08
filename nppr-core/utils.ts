@@ -1,4 +1,5 @@
 import { createReadStream } from "node:fs";
+import { tryToNumber } from "./internals/lang";
 import { bufferToReadable, toReadableStream } from "./internals/stream";
 
 export type InputSource =
@@ -13,8 +14,11 @@ export type InputSource =
 
 export function inputSource(source: InputSource): ReadableStream {
   if (typeof source === "string") {
-    // file path
-    return toReadableStream(createReadStream(source));
+    source = tryToNumber(source);
+    if (typeof source === "string") {
+      // file path
+      return toReadableStream(createReadStream(source));
+    }
   }
   if (typeof source === "number") {
     const builtins: Record<string, NodeJS.ReadableStream> = {
@@ -40,6 +44,15 @@ export function inputSource(source: InputSource): ReadableStream {
 
   // ArrayBufferView | ArrayBufferLike
   return bufferToReadable(source);
+}
+
+export function renderTpl(tpl: string, variables: Record<string, any>, replaceUnknown = false) {
+  return tpl.replace(/\[([^\]]+)]/g, (match, key: string) => {
+    if (!(key in variables)) {
+      return replaceUnknown ? "" : match;
+    }
+    return variables[key] ?? "";
+  });
 }
 
 export function getPublishManifestFields() {

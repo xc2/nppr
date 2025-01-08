@@ -2,7 +2,7 @@ import compare from "just-compare";
 import { PackagePackOptions } from "./internals/constants";
 import { type Manifest, mutateDependencies, mutateFields } from "./internals/package";
 import { type TarTransformer, transformTarball } from "./internals/tar";
-import { type InputSource, inputSource } from "./utils";
+import { type InputSource, inputSource, renderTpl } from "./utils";
 
 export interface RepackPackage extends RepackOptions {
   source: InputSource;
@@ -50,8 +50,8 @@ export function createRepack(options: RepackOptions = {}) {
         }
       }
       mutateFields(manifest, {
-        name: options.name,
-        version: options.version,
+        name: options.name && renderTpl(options.name, manifest),
+        version: options.version && renderTpl(options.version, manifest),
       });
       mutateDependencies(manifest, options.remapDeps);
       const unchanged = compare(JSON.parse(text), manifest);

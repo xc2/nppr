@@ -1,8 +1,10 @@
+import { writeFile } from "node:fs/promises";
 import { glob } from "glob";
+import { tryToNumber } from "nppr-core";
+import { attest } from "nppr-core/provenance";
 import { repack } from "nppr-core/repack";
-import { inputSource } from "nppr-core/utils";
-import type { CliCommand } from "../types";
-import { tryToNumber } from "../utils/lang";
+import type { CliCommand } from "../utils/cac";
+import { Package } from "../utils/package";
 
 export const rootCommand: CliCommand = (cmd) => {
   return cmd("[...inputs]")
@@ -20,31 +22,55 @@ export const rootCommand: CliCommand = (cmd) => {
       const _inputs = inputs.map(tryToNumber);
       const _paths = _inputs.filter((v) => typeof v === "string");
       const _fds = _inputs.filter((v) => typeof v === "number");
-      const sources = ([] as (string | number)[])
+      const pkgs = ([] as (string | number)[])
         .concat(await glob(_paths, {}))
         .concat(_fds)
-        .map((source) => ({
-          input: source,
-          source: inputSource(source),
-        }));
+        .map((input) => new Package(input));
+
+      const writings: PromiseLike<any>[] = [];
 
       // #region Repack
       if (options.repack) {
-        repack(sources, {
-          name: options.name,
-          version: options.version,
-          remapDeps: options.remap,
-        }).forEach((output, i) => {
-          sources[i].source = output;
+        repack(
+          pkgs.map((v) => ({ source: v.source })),
+          {
+            name: options.name,
+            version: options.version,
+            remapDeps: options.remap,
+          }
+        ).forEach((output, i) => {
+          pkgs[i].source = output;
         });
       }
       // #endregion
+      // #region Output
+      if (options.output) {
+        for (const pkg of pkgs) {
+          writings.push(
+            pkg.output(
+              typeof options.output === "string"
+                ? options.output
+                : "[dirname]/[name]-[version]_repacked[extname]"
+            )
+          );
+        }
+      }
+      // #endregion
+
+      let attestation: any;
 
       // #region Provenance
       if (options.provenance) {
-        // const attestation = await attest(sources.map(v => ({source: v})));
-        // console.log(attestation);
+        attestation = await attest(
+          pkgs.map((v) => ({ source: v.tee(), manifest: v.manifest })),
+          {}
+        );
+        if (typeof options.provenance === "string") {
+          writings.push(writeFile(options.provenance, JSON.stringify(attestation)));
+        }
       }
       // #endregion
+
+      await Promise.all(writings);
     });
 };

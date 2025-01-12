@@ -3,7 +3,7 @@ import * as NodePath from "node:path";
 import { Writable } from "node:stream";
 import { type Manifest, getManifest, inputSource, renderTpl, tryToNumber } from "nppr-core";
 
-function pathInfo(path: string, cwd: string) {
+export function pathInfo(path: string, cwd: string) {
   const abs = NodePath.resolve(cwd, path);
   const rel = NodePath.relative(cwd, abs);
   let ext = NodePath.extname(abs);
@@ -12,7 +12,15 @@ function pathInfo(path: string, cwd: string) {
     ext = ".tar" + ext;
     base = NodePath.basename(base, ext);
   }
-  return { fullpath: abs, dirname: rel, extname: ext, basename: base };
+  return { fullpath: abs, path: NodePath.dirname(rel), extname: ext, basename: base };
+}
+
+export function packageName(name: string) {
+  if (name.startsWith("@")) {
+    const [scope, unscoped] = name.slice(1).split("/");
+    return { scope, unscoped, pathPart: `${scope}-${unscoped}` };
+  }
+  return { scope: "", unscoped: name, pathPart: name };
 }
 
 export class Package {
@@ -66,14 +74,25 @@ export class Package {
     return this.tee().pipeTo(Writable.toWeb(createWriteStream(outputPath)));
   }
 
-  async getOutputPath(p: string = "[dirname]/[name]-[version][extname]") {
+  // TODO: move along and add tests
+  async getOutputPath(p: string = "[path]/[name]-[version][extname]") {
     const manifest = await this.manifest;
+    const name = packageName(manifest.name);
     const variables = {
       ...manifest,
-      dirname: this.pathInfo?.dirname ?? "",
+      scope: name.scope,
+      unscoped: name.unscoped,
+      fullpath: this.pathInfo?.fullpath ?? "",
+      path: this.pathInfo?.path ?? "",
       extname: this.pathInfo?.extname ?? ".tgz",
-      basename: this.pathInfo?.basename ?? `${manifest.name}-${manifest.version}`,
+      basename: this.pathInfo?.basename ?? `${name.pathPart}-${manifest.version}`,
     };
-    return NodePath.resolve(this.cwd, renderTpl(p, variables));
+    const _escape = (value: any, key: string) => {
+      if (key === "name") {
+        return packageName(value).pathPart;
+      }
+      return `${value}`.replace(/[^0-9a-zA-Z-._]/g, "_");
+    };
+    return NodePath.resolve(this.cwd, renderTpl(p, variables, { escape: _escape }));
   }
 }

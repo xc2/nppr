@@ -46,12 +46,18 @@ export function inputSource(source: InputSource): ReadableStream {
   return bufferToReadable(source);
 }
 
-export function renderTpl(tpl: string, variables: Record<string, any>, replaceUnknown = false) {
+export function renderTpl(
+  tpl: string,
+  variables: Record<string, any>,
+  options?: { replaceUnknown?: boolean; escape?: (value: any, key: string) => string }
+) {
+  const { replaceUnknown = false, escape: _escape } = options ?? {};
   return tpl.replace(/\[([^\]]+)]/g, (match, key: string) => {
     if (!(key in variables)) {
       return replaceUnknown ? "" : match;
     }
-    return variables[key] ?? "";
+    const v = variables[key] ?? "";
+    return _escape ? _escape(v, key) : v;
   });
 }
 

@@ -20,6 +20,7 @@ export default [
       root: "./nppr",
       environment: "node",
       env: {
+        SIMULATE_GITHUB: "true",
         CI: "1",
         GITHUB_ACTIONS: "true",
         GITHUB_WORKFLOW_REF: "xc2/barhop/.github/workflows/npm-stable.yaml@refs/tags/v0.0.1",

@@ -14,6 +14,7 @@
     "@types/npm-package-arg": "^6.1.4",
     "@types/ssri": "^7.1.5",
     "cac": "^6.7.14",
+    "chalk": "^5.4.1",
     "glob": "^11.0.0",
     "just-compare": "^2.3.0",
     "libnpmpublish": "^11.0.0",

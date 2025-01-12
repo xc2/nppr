@@ -10,3 +10,10 @@ export const registerCommand = (cli: CAC, name: string, cmd: CliCommand) => {
   };
   return cmd(register);
 };
+
+export class ArgumentsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ArgumentsError";
+  }
+}

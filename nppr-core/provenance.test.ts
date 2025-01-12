@@ -1,4 +1,3 @@
-// biome-ignore lint/correctness/noUnusedImports: a
 // @ts-ignore
 import { generateProvenance } from "libnpmpublish/lib/provenance";
 import { BasicTarballPath, BasicTarballSubject } from "tests/__fixtures__/tarball";

@@ -7,6 +7,11 @@ settings:
 overrides:
   nock: ^13.5.6
 
+patchedDependencies:
+  libnpmpublish:
+    hash: kbqs2hl7rmxq4kxm5fufrewsty
+    path: patches/libnpmpublish.patch
+
 importers:
 
   .:
@@ -46,7 +51,7 @@ importers:
         version: 2.3.0
       libnpmpublish:
         specifier: ^11.0.0
-        version: 11.0.0
+        version: 11.0.0(patch_hash=kbqs2hl7rmxq4kxm5fufrewsty)
       nock:
         specifier: ^13.5.6
         version: 13.5.6
@@ -1155,7 +1160,7 @@ snapshots:
 
   just-compare@2.3.0: {}
 
-  libnpmpublish@11.0.0:
+  libnpmpublish@11.0.0(patch_hash=kbqs2hl7rmxq4kxm5fufrewsty):
     dependencies:
       ci-info: 4.1.0
       normalize-package-data: 7.0.0

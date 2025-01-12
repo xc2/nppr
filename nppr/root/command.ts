@@ -28,6 +28,7 @@ export const rootCommand: CliCommand = (cmd) => {
       "[Publish] Don't remove meaningless fields from manifest on publish"
     )
     .option("--add-fields [fields]", "[Publish] Additional fields to add to the manifest")
+    .option("--tag <fields>", "[Publish] Dist-tag to publish the package with")
     .option("--provenance-from <filepath>", "[Publish] Provenance bundle from file")
     .example(
       (bin) =>
@@ -109,6 +110,7 @@ export const rootCommand: CliCommand = (cmd) => {
           registry: options.registry,
           provenanceBundle: provenance ?? options.provenanceFrom,
           token: process.env.NPM_TOKEN,
+          tag: options.tag,
           manifest: {
             keepFields: options.keepFields,
             additionalFields: options.addFields,

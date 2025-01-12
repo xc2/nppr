@@ -33,10 +33,13 @@ jobs:
       run: pnpm install
 
     - name: Publish
+      permissions:
+        id-token: write
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN_PLAY }}
       run: |
-        pnpx tsx nppr/bin.ts tests/__fixtures__/barhop-0.0.0-PLACEHOLDER.tgz --repack --name @canary-109cafe/nppr-play-1 --output 1.tgz
-        pnpx tsx nppr/bin.ts tests/__fixtures__/barhop-0.0.0-PLACEHOLDER.tgz --repack --name @canary-109cafe/nppr-play-2 --output 2.tgz
-        ls *.tgz
-        pnpx tsx nppr/bin.ts 1.tgz 2.tgz --provenance --publish --add-fields.readmeFilename README.md
+        PKG_VER=0.0.0-play.$(date +%s)
+        pnpx tsx nppr/bin.ts tests/__fixtures__/barhop-0.0.0-PLACEHOLDER.tgz --repack --name @canary-109cafe/nppr-play-1 --version "$PKG_VER" --output 1.tgz
+        pnpx tsx nppr/bin.ts tests/__fixtures__/barhop-0.0.0-PLACEHOLDER.tgz --repack --name @canary-109cafe/nppr-play-2 --version "$PKG_VER" --output 2.tgz
+        ls -allh *.tgz
+        pnpx tsx nppr/bin.ts 1.tgz 2.tgz --provenance --publish --add-fields.readmeFilename README.md --tag play

@@ -171,7 +171,6 @@ describe("publish", () => {
   });
   test("add fields", async () => {
     nockScope.put(`/barhop`).reply(async (uri, body) => {
-      console.log(body);
       expect(body).toMatchObject({
         name: "barhop",
         versions: {

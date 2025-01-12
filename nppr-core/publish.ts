@@ -64,7 +64,9 @@ export function getPublishConfig(
     provenanceFile: provenanceBundle,
     defaultTag: tag || "latest",
     provenance: false,
-    _authToken: options._authToken || options.token,
+    forceAuth: {
+      token: options._authToken || options.token,
+    },
   };
 }
 

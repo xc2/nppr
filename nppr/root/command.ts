@@ -28,6 +28,7 @@ export const rootCommand: CliCommand = (cmd) => {
       "[Publish] Don't remove meaningless fields from manifest on publish"
     )
     .option("--add-fields [fields]", "[Publish] Additional fields to add to the manifest")
+    .option("--provenance-from <filepath>", "[Publish] Provenance bundle from file")
     .example(
       (bin) =>
         `  Rename a package
@@ -40,6 +41,12 @@ export const rootCommand: CliCommand = (cmd) => {
 `
     )
     .action(async (inputs: string[], options) => {
+      if (options.repack && options.provenanceFrom) {
+        throw new ArgumentsError("Cannot use --repack and --provenance-from together");
+      }
+      if (options.provenance && options.provenanceFrom) {
+        throw new ArgumentsError("Cannot use --provenance and --provenance-from together");
+      }
       const _inputs = inputs.map(tryToNumber);
       const _paths = _inputs.filter((v) => typeof v === "string");
       const _fds = _inputs.filter((v) => typeof v === "number");
@@ -100,7 +107,8 @@ export const rootCommand: CliCommand = (cmd) => {
       if (options.publish) {
         const publishOptions: PublishOptions = {
           registry: options.registry,
-          provenanceBundle: provenance,
+          provenanceBundle: provenance ?? options.provenanceFrom,
+          token: process.env.NPM_TOKEN,
           manifest: {
             keepFields: options.keepFields,
             additionalFields: options.addFields,

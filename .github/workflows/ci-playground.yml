@@ -31,3 +31,12 @@ jobs:
 
     - name: Install dependencies
       run: pnpm install
+
+    - name: Publish
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN_PLAY }}
+      run: |
+        pnpx tsx nppr/bin.ts tests/__fixtures__/barhop-0.0.0-PLACEHOLDER.tgz --repack --name @canary-109cafe/nppr-play-1 --output 1.tgz
+        pnpx tsx nppr/bin.ts tests/__fixtures__/barhop-0.0.0-PLACEHOLDER.tgz --repack --name @canary-109cafe/nppr-play-2 --output 2.tgz
+        ls *.tgz
+        pnpx tsx nppr/bin.ts 1.tgz 2.tgz --provenance --publish --add-fields.readmeFilename README.md

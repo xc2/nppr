@@ -9,7 +9,7 @@ if (coverageProvider) {
 export default {
   test: {
     coverage: {
-      include: ["nppr-core"],
+      include: ["nppr-core", "nppr"],
     },
   },
 

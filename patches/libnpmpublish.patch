@@ -1,0 +1,53 @@
+diff --git a/lib/provenance.js b/lib/provenance.js
+index cead8da6be34fe3940ef7552c2b4a955efec1b1f..516dabb1727f92cde27ece2d1415d5cbaafc39d6 100644
+--- a/lib/provenance.js
++++ b/lib/provenance.js
+@@ -198,32 +198,34 @@ const generateProvenance = async (subject, opts) => {
+ 
+ const verifyProvenance = async (subject, provenancePath) => {
+   let provenanceBundle
+-  try {
+-    provenanceBundle = JSON.parse(await readFile(provenancePath))
+-  } catch (err) {
+-    err.message = `Invalid provenance provided: ${err.message}`
+-    throw err
++  if (typeof provenancePath === 'string') {
++    try {
++      provenanceBundle = JSON.parse(await readFile(provenancePath))
++    } catch (err) {
++      err.message = `Invalid provenance provided: ${err.message}`
++      throw err
++    }
++  } else if (provenancePath && typeof provenancePath === 'object') {
++    provenanceBundle = provenancePath
+   }
+ 
+   const payload = extractProvenance(provenanceBundle)
+   if (!payload.subject || !payload.subject.length) {
+     throw new Error('No subject found in sigstore bundle payload')
+   }
+-  if (payload.subject.length > 1) {
+-    throw new Error('Found more than one subject in the sigstore bundle payload')
+-  }
+ 
+-  const bundleSubject = payload.subject[0]
+-  if (subject.name !== bundleSubject.name) {
+-    throw new Error(
+-      `Provenance subject ${bundleSubject.name} does not match the package: ${subject.name}`
+-    )
++  const bundleSubject = payload.subject.find((s) => s.name === subject.name)
++  if (!bundleSubject) {
++    throw new Error(`No subject found in sigstore bundle payload matching the package: ${subject.name}`)
+   }
+   if (subject.digest.sha512 !== bundleSubject.digest.sha512) {
+     throw new Error('Provenance subject digest does not match the package')
+   }
+ 
+-  await sigstore.verify(provenanceBundle)
++  if (process.env.SKIP_VERIFY_SIGSTORE_USE_FOR_TESTING_ONLY_OR_IF_YOU_KNOW_WHAT_YOU_ARE_DOING !== 'true') {
++    await sigstore.verify(provenanceBundle)
++  }
++
+   return provenanceBundle
+ }
+ 

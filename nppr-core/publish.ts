@@ -24,6 +24,7 @@ export async function publish(
   const packageJson = await getManifest(source1);
   const manifest = getPublishManifest(packageJson, manifestOptions);
   const config = getPublishConfig({ ...packageJson, ...manifest }, publishOptions);
+
   return npmpublish(
     manifest as any,
     // TODO: libnpmpublish only accepts Buffer
@@ -54,24 +55,42 @@ export function getPublishManifest(manifest: Manifest, options = {} as ManifestP
 
 export function getPublishConfig(
   manifest: Manifest,
-  { provenanceBundle, tag, ...options } = {} as Omit<PublishOptions, "manifest">
+  { tag, provenanceBundle, ...options } = {} as Omit<PublishOptions, "manifest">
 ): _PublishOptions {
-  const provenanceFile = provenanceBundle ? normalizeProvenance(provenanceBundle) : undefined;
   return {
     ...manifest.publishConfig,
     npmVersion: NPPR_USER_AGENT,
     ...options,
+    provenanceFile: provenanceBundle,
     defaultTag: tag || "latest",
-    // @ts-expect-error used by fs.readFile
-    provenanceFile,
     provenance: false,
     _authToken: options._authToken || options.token,
   };
 }
 
-function normalizeProvenance(provenance: string | object): string | Buffer {
-  if (typeof provenance === "string") {
-    return provenance;
-  }
-  return Buffer.from(JSON.stringify(provenance), "utf-8");
-}
+// replaced by patching `libnpmpublish`
+// function normalizeProvenanceBundle(provenanceBundle: undefined | string | object) {
+//   if (provenanceBundle === undefined) {
+//     return {
+//       dispose: () => {},
+//       path: undefined,
+//     };
+//   }
+//   if (typeof provenanceBundle === "string") {
+//     return {
+//       dispose: () => {},
+//       path: provenanceBundle,
+//     };
+//   }
+//   const path = `${tmpdir()}/nppr-provenance-${Date.now()}.json`;
+//   writeFileSync(path, JSON.stringify(provenanceBundle));
+//
+//   return {
+//     dispose: () => {
+//       try {
+//         unlinkSync(path);
+//       } catch {}
+//     },
+//     path,
+//   };
+// }

@@ -11,7 +11,7 @@ try {
   await cli.runMatchedCommand();
 } catch (e) {
   if (["CACError", "ArgumentsError"].includes((e as any)?.name)) {
-    const [message, ...rest] = ((e as any).stack ?? "").split(/(\r\n|\n|\r)/);
+    const [message] = ((e as any).stack ?? "").split(/(\r\n|\n|\r)/);
     process.stderr.write(message + EOL + EOL);
     cli.outputHelp();
     process.exit(255);

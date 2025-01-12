@@ -2,6 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { glob } from "glob";
 import { tryToNumber } from "nppr-core";
 import { attest } from "nppr-core/provenance";
+import { type PublishOptions, publish } from "nppr-core/publish";
 import { repack } from "nppr-core/repack";
 import { ArgumentsError, type CliCommand } from "../utils/cac";
 import { Package } from "../utils/package";
@@ -20,6 +21,13 @@ export const rootCommand: CliCommand = (cmd) => {
       "--provenance [filepath]",
       "[Provenance] Generate and attest the provenance of the package"
     )
+    .option("--registry <url>", "Package Registry URL", { default: "https://registry.npmjs.org" })
+    .option("--publish", "[Publish] Publish the package to the registry")
+    .option(
+      "--keep-fields [fields]",
+      "[Publish] Don't remove meaningless fields from manifest on publish"
+    )
+    .option("--add-fields [fields]", "[Publish] Additional fields to add to the manifest")
     .example(
       (bin) =>
         `  Rename a package
@@ -74,16 +82,32 @@ export const rootCommand: CliCommand = (cmd) => {
       }
       // #endregion
 
-      let attestation: any;
+      let provenance: any;
 
       // #region Provenance
       if (options.provenance) {
-        attestation = await attest(
+        provenance = await attest(
           pkgs.map((v) => ({ source: v.tee(), manifest: v.manifest })),
           {}
         );
         if (typeof options.provenance === "string") {
-          writings.push(writeFile(options.provenance, JSON.stringify(attestation)));
+          writings.push(writeFile(options.provenance, JSON.stringify(provenance)));
+        }
+      }
+      // #endregion
+
+      // #region Publish
+      if (options.publish) {
+        const publishOptions: PublishOptions = {
+          registry: options.registry,
+          provenanceBundle: provenance,
+          manifest: {
+            keepFields: options.keepFields,
+            additionalFields: options.addFields,
+          },
+        };
+        for (const pkg of pkgs) {
+          await publish(pkg.source, publishOptions);
         }
       }
       // #endregion

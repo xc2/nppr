@@ -19,6 +19,7 @@ export default [
       name: "cli-github",
       root: "./nppr",
       environment: "node",
+      include: ["**/*.{test,spec,e2e}.?(c|m)[jt]s?(x)"],
       env: {
         SIMULATE_GITHUB: "true",
         CI: "1",
@@ -34,8 +35,7 @@ export default [
         RUNNER_ENVIRONMENT: "github-hosted",
         GITHUB_RUN_ID: "12561818790",
         GITHUB_RUN_ATTEMPT: "1",
-        SIGSTORE_ID_TOKEN:
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+        SKIP_VERIFY_SIGSTORE_USE_FOR_TESTING_ONLY_OR_IF_YOU_KNOW_WHAT_YOU_ARE_DOING: "true",
       },
     },
     resolve,

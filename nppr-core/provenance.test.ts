@@ -48,7 +48,7 @@ describe("Provenance Attest", () => {
 
     await expect(attest([inputSource(BasicTarballPath)])).resolves.toStrictEqual([
       [BasicTarballSubject],
-      { tlogUpload: false },
+      {},
     ]);
   });
   test("attest with options", async ({ signal }) => {

@@ -24,8 +24,8 @@ describe("publish", () => {
     const [manifest, tarball, config] = r;
     expect(manifest).toMatchSnapshot();
     expect(tarball).toBeInstanceOf(Buffer);
-    expect(tarball).toHaveLength(15733);
-    expect(config).toMatchObject({ _authToken: "foo", defaultTag: "bar" });
+    expect(tarball).toHaveLength(15792);
+    expect(config).toMatchObject({ forceAuth: { token: "foo" }, defaultTag: "bar" });
   });
 });
 
@@ -70,15 +70,6 @@ describe("getPublishConfig", () => {
   test("should have npmVersion set", () => {
     expect(getPublishConfig(manifest)).toMatchObject({
       npmVersion: NPPR_USER_AGENT,
-    });
-  });
-
-  test("should allow provenanceBundle", () => {
-    expect(getPublishConfig(manifest, { provenanceBundle: "foo" })).toMatchObject({
-      provenanceFile: "foo",
-    });
-    expect(getPublishConfig(manifest, { provenanceBundle: {} })).toMatchObject({
-      provenanceFile: Buffer.from("{}"),
     });
   });
 });

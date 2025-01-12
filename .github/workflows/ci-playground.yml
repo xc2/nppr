@@ -42,5 +42,5 @@ jobs:
         pnpx tsx nppr/bin.ts tests/__fixtures__/barhop-0.0.0-PLACEHOLDER.tgz --repack --name @canary-109cafe/nppr-play-1 --version "$PKG_VER" --output 1.tgz --provenance 1.sigstore
         pnpx tsx nppr/bin.ts tests/__fixtures__/barhop-0.0.0-PLACEHOLDER.tgz --repack --name @canary-109cafe/nppr-play-2 --version "$PKG_VER" --output 2.tgz --provenance 2.sigstore
         ls -allh *.tgz *.sigstore
-        pnpx tsx nppr/bin.ts 1.tgz --provenance-from 1.sigstore --publish --add-fields.readmeFilename README.md --tag latest
-        pnpx tsx nppr/bin.ts 2.tgz --provenance-from 2.sigstore --publish --add-fields.readmeFilename README.md --tag latest
+        pnpx tsx nppr/bin.ts 1.tgz --provenance-from 1.sigstore --publish --add-fields.readmeFilename PACKAGE.md --tag latest
+        pnpx tsx nppr/bin.ts 2.tgz --provenance-from 2.sigstore --publish --add-fields.readmeFilename PACKAGE.md --tag latest

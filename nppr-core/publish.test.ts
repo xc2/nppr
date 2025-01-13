@@ -1,15 +1,15 @@
-import { publish as _publish } from "libnpmpublish";
 import { mockImplementation, test } from "tests/vitest";
 import { afterAll, describe, expect, vi } from "vitest";
 import { BasicTarballPath } from "../tests/__fixtures__/tarball";
 import type { Manifest } from "./internals/package";
 import { getPublishConfig, getPublishManifest, publish } from "./publish";
+import { publish as _publish } from "./third_party/libnpmpublish";
 import { NPPR_USER_AGENT } from "./utils";
 
-vi.mock("libnpmpublish", { spy: true });
+vi.mock("./third_party/libnpmpublish", { spy: true });
 
 afterAll(() => {
-  vi.doUnmock("libnpmpublish");
+  vi.doUnmock("./third_party/libnpmpublish");
 });
 describe("publish", () => {
   test("should publish a package", async ({ signal }) => {

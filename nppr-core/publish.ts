@@ -1,7 +1,10 @@
 import { readFile } from "node:fs/promises";
-import { type PublishOptions as _PublishOptions, publish as npmpublish } from "libnpmpublish";
 import { type Manifest, getManifest } from "./internals/package";
 import { readableToBuffer } from "./internals/stream";
+import {
+  type PublishOptions as _PublishOptions,
+  publish as npmpublish,
+} from "./third_party/libnpmpublish";
 import {
   type InputSource,
   NPPR_USER_AGENT,
@@ -38,7 +41,7 @@ async function getProvenance(
 export async function publish(
   tarball: InputSource,
   { manifest: manifestOptions, provenance, ...publishOptions } = {} as PublishOptions
-) {
+): Promise<Omit<Response, "bytes" | "formData">> {
   const [source1, source2] = inputSource(tarball).tee();
   const packageJson = await getManifest(source1);
   const manifest = getPublishManifest(packageJson, manifestOptions);
@@ -58,7 +61,7 @@ export async function publish(
     // TODO: libnpmpublish only accepts Buffer
     Buffer.from(await readableToBuffer(source2)),
     config
-  );
+  ) as any;
 }
 
 export function getPublishManifest(manifest: Manifest, options = {} as ManifestPublishOptions) {

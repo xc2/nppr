@@ -1,7 +1,14 @@
 import { createWriteStream } from "node:fs";
 import * as NodePath from "node:path";
 import { Writable } from "node:stream";
-import { type Manifest, getManifest, inlineTemplate, inputSource, tryToNumber } from "nppr-core";
+import {
+  type Manifest,
+  getManifest,
+  inlineTemplate,
+  inputSource,
+  packageName,
+  tryToNumber,
+} from "nppr-core";
 
 export function pathInfo(path: string, cwd: string) {
   const abs = NodePath.resolve(cwd, path);
@@ -13,14 +20,6 @@ export function pathInfo(path: string, cwd: string) {
     base = NodePath.basename(base, ext);
   }
   return { fullpath: abs, path: NodePath.dirname(rel), extname: ext, basename: base };
-}
-
-export function packageName(name: string) {
-  if (name.startsWith("@")) {
-    const [scope, unscoped] = name.slice(1).split("/");
-    return { scope, unscoped, pathPart: `${scope}-${unscoped}` };
-  }
-  return { scope: "", unscoped: name, pathPart: name };
 }
 
 export class Package {

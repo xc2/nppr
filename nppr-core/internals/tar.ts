@@ -89,14 +89,20 @@ export async function* iterEntries(source: ReadableStream, parseOptions?: TarPar
     let pEntry = readEntry();
     source.pipeTo(toWriteableStream(extract));
     while (true) {
-      const next = await Promise.race([pEnd, pEntry]);
-      if (!next) {
+      const current = await Promise.race([pEnd, pEntry]);
+      if (!current) {
         break;
       }
       pEntry = readEntry();
-      yield [next, toStreamReader(toReadableStream(next))] as const;
-      if (!next.emittedEnd) {
-        next.on("data", () => {});
+      yield [current, toStreamReader(toReadableStream(current))] as const;
+      if (!current.emittedEnd) {
+        const ondata = () => {
+          current.resume();
+        };
+        current.on("data", ondata);
+        current.once("end", () => {
+          current.off("data", ondata);
+        });
       }
     }
   } finally {

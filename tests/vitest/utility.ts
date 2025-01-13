@@ -7,7 +7,7 @@ export function mockImplementation<T extends (...args: any[]) => any>(
 ) {
   instance.mockImplementation(impl);
   signal?.addEventListener("abort", () => {
-    instance.mockRestore();
+    instance.mockClear();
   });
 }
 export function stubEnvs(envs: Record<string, string | undefined>, signal?: AbortSignal) {

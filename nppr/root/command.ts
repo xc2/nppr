@@ -17,6 +17,7 @@ export const rootCommand: CliCommand = (cmd) => {
     )
     .option("--name <name>", "[Repack] Overrides `package.json/name` on repacking")
     .option("--version <version>", "[Repack] Overrides `package.json/version` on repacking")
+    .option("--readme [filepath]", "[Repack] Overrides `package.json/version` on repacking")
     .option("--remap <remap>", "[Repack] Remap dependencies/optionalDependencies on repacking")
     .option(
       "--provenance [filepath]",

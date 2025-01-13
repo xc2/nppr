@@ -98,11 +98,11 @@ export const rootCommand: CliCommand = (cmd) => {
 
       // #region Provenance
       if (options.provenance) {
-        const provenance = await attest(
-          pkgs.map((v) => ({ source: v.tee(), manifest: v.manifest })),
-          {}
-        );
-        provenanceBundle.add(provenance);
+        for (const pkg of pkgs) {
+          // NPM Registry only supports one package per provenance
+          const provenance = await attest([{ source: pkg.tee(), manifest: pkg.manifest }], {});
+          provenanceBundle.add(provenance);
+        }
         if (typeof options.provenance === "string") {
           writings.push(provenanceBundle.outputBundle(options.provenance));
         }

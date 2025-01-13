@@ -1,10 +1,9 @@
 // @ts-ignore
 import { generateProvenance } from "libnpmpublish/lib/provenance";
-import npa from "npm-package-arg";
 import { digestStream } from "./internals/crypto";
 import { toHex } from "./internals/encoding";
 import { type Manifest, getManifest } from "./internals/package";
-import { type InputSource, inputSource } from "./utils";
+import { type InputSource, inputSource, toPurl } from "./utils";
 
 interface IdentityProvider {
   getToken: () => Promise<string>;
@@ -55,10 +54,8 @@ export async function generateSubject(
   }
   const hash = await digestStream(source, "sha512");
   const { name, version } = await manifest;
-  const spec = npa.resolve(name, version);
   return {
-    // @ts-ignore
-    name: npa.toPurl(spec) as string,
+    name: toPurl({ name, version }),
     digest: { sha512: toHex(hash) },
   };
 }

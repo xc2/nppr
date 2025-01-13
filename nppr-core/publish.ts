@@ -2,7 +2,13 @@ import { readFile } from "node:fs/promises";
 import { type PublishOptions as _PublishOptions, publish as npmpublish } from "libnpmpublish";
 import { type Manifest, getManifest } from "./internals/package";
 import { readableToBuffer } from "./internals/stream";
-import { type InputSource, NPPR_USER_AGENT, getPublishManifestFields, inputSource } from "./utils";
+import {
+  type InputSource,
+  NPPR_USER_AGENT,
+  getPublishManifestFields,
+  inputSource,
+  toPurl,
+} from "./utils";
 
 export interface ManifestPublishOptions {
   keepFields?: true | string[];
@@ -12,20 +18,33 @@ export interface ManifestPublishOptions {
 export interface PublishOptions
   extends Omit<_PublishOptions, "provenanceFile" | "provenance" | "defaultTag"> {
   manifest?: ManifestPublishOptions;
-  provenanceBundle?: string | object;
+  provenance?: string | object | ((purl: string) => string | object);
   tag?: string;
   token?: string;
 }
 
+async function getProvenance(
+  input: string | object | ((purl: string) => string | object),
+  purl: string
+) {
+  const bundle = typeof input === "function" ? input(purl) : input;
+  if (!bundle) return null;
+  if (typeof bundle === "string") {
+    return JSON.parse(await readFile(bundle, "utf8"));
+  }
+  return bundle;
+}
+
 export async function publish(
   tarball: InputSource,
-  { manifest: manifestOptions, provenanceBundle, ...publishOptions } = {} as PublishOptions
+  { manifest: manifestOptions, provenance, ...publishOptions } = {} as PublishOptions
 ) {
   const [source1, source2] = inputSource(tarball).tee();
   const packageJson = await getManifest(source1);
   const manifest = getPublishManifest(packageJson, manifestOptions);
+  const provenanceBundle = provenance && (await getProvenance(provenance, toPurl(manifest)));
   if (provenanceBundle) {
-    const repo = await getRepoFromProvenance(provenanceBundle);
+    const repo = getRepoFromProvenance(provenanceBundle);
     if (repo) {
       addRepoInfoToManifest(manifest, repo);
     }
@@ -78,10 +97,7 @@ export function getPublishConfig(
   };
 }
 
-export async function getRepoFromProvenance(provenance: string | object) {
-  if (typeof provenance === "string") {
-    provenance = JSON.parse(await readFile(provenance, "utf8"));
-  }
+export function getRepoFromProvenance(provenance: object) {
   const p = provenance as any;
   const payloadSource = JSON.parse(Buffer.from(p.dsseEnvelope.payload, "base64").toString("utf-8"));
   if (payloadSource?.predicate?.buildDefinition?.resolvedDependencies?.[0]) {

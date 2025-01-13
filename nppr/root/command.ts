@@ -1,4 +1,3 @@
-import { writeFile } from "node:fs/promises";
 import { glob } from "glob";
 import { tryToNumber } from "nppr-core";
 import { attest } from "nppr-core/provenance";
@@ -6,6 +5,8 @@ import { type PublishOptions, publish } from "nppr-core/publish";
 import { repack } from "nppr-core/repack";
 import { ArgumentsError, type CliCommand } from "../utils/cac";
 import { Package } from "../utils/package";
+import { ProvenanceBundle } from "../utils/provenance-bundle";
+import { secretFrom } from "../utils/secret-from";
 
 export const rootCommand: CliCommand = (cmd) => {
   return cmd("[...inputs]")
@@ -23,6 +24,9 @@ export const rootCommand: CliCommand = (cmd) => {
     )
     .option("--registry <url>", "Package Registry URL", { default: "https://registry.npmjs.org" })
     .option("--publish", "[Publish] Publish the package to the registry")
+    .option("--token", "[Publish] Publish Token, e.g., `env:NPM_TOKEN` or `file:./npm-token`", {
+      default: "env:NPM_TOKEN",
+    })
     .option(
       "--keep-fields [fields]",
       "[Publish] Don't remove meaningless fields from manifest on publish"
@@ -90,17 +94,20 @@ export const rootCommand: CliCommand = (cmd) => {
       }
       // #endregion
 
-      let provenance: any;
+      let provenanceBundle = new ProvenanceBundle();
 
       // #region Provenance
       if (options.provenance) {
-        provenance = await attest(
+        const provenance = await attest(
           pkgs.map((v) => ({ source: v.tee(), manifest: v.manifest })),
           {}
         );
+        provenanceBundle.add(provenance);
         if (typeof options.provenance === "string") {
-          writings.push(writeFile(options.provenance, JSON.stringify(provenance)));
+          writings.push(provenanceBundle.outputBundle(options.provenance));
         }
+      } else if (options.provenanceFrom) {
+        provenanceBundle = await ProvenanceBundle.fromFile(options.provenanceFrom);
       }
       // #endregion
 
@@ -108,8 +115,8 @@ export const rootCommand: CliCommand = (cmd) => {
       if (options.publish) {
         const publishOptions: PublishOptions = {
           registry: options.registry,
-          provenanceBundle: provenance ?? options.provenanceFrom,
-          token: process.env.NPM_TOKEN,
+          provenance: provenanceBundle.get.bind(provenanceBundle),
+          token: await secretFrom(options.token),
           tag: options.tag,
           manifest: {
             keepFields: options.keepFields,

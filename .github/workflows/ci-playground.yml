@@ -47,4 +47,4 @@ jobs:
         pnpx tsx nppr/bin.ts '*.tgz' --repack --name '@canary-109cafe/[name]' --version "$PKG_VER" --readme tests/__fixtures__/readme.md.tpl --output 'dist/[basename][extname]' --provenance 'dist/provenances.sigstore'
         ls -allh dist
         # publish
-        pnpx tsx nppr/bin.ts dist/*.tgz --provenance-from dist/provenances.sigstore --publish --add-fields.readmeFilename 'PACKAGE.md' --tag latest
+        pnpx tsx nppr/bin.ts dist/*.tgz --provenance-from dist/provenances.sigstore --publish --tag latest

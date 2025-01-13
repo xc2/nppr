@@ -21,7 +21,10 @@ jobs:
         node-version: 20
         cache: 'pnpm'
     - run: pnpm install
-    - run: pnpm build
+    - run: |
+        pnpm build
+        cd packages/nppr && npm pack && cd ../..
+        cd packages/nppr-core && npm pack && cd ../..
 
     - name: Publish
       env:

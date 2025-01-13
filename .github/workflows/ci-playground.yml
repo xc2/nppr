@@ -31,7 +31,7 @@ jobs:
         BR_SLUG=$(echo -n "$BR_SLUG" | perl -pe 's/[^a-zA-Z-_]/-/g' | cut -c1-20)
         PKG_VER="0.0.0-${BR_SLUG}.${GITHUB_RUN_ID}"
         mkdir -p artifacts
-        pnpx tsx nppr/bin.ts 'packages/*/*.tgz' --repack --name '@canary-109cafe/[unscopedPart]' --version "$PKG_VER" --output "artifacts/[basename][extname]" --provenance 'artifacts/provenances.sigstore'
+        pnpx tsx nppr/bin.ts 'packages/*/*.tgz' --repack --readme PACKAGE.md --name '@canary-109cafe/[unscopedPart]' --version "$PKG_VER" --output "artifacts/[basename][extname]" --provenance 'artifacts/provenances.sigstore'
         ls -allh artifacts
         # publish
         #pnpx tsx nppr/bin.ts dist/*.tgz --provenance-from dist/provenances.sigstore --publish --tag latest

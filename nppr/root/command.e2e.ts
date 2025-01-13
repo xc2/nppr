@@ -130,6 +130,12 @@ describe("publish", () => {
     nockScope.put(`/${packageName}`).reply(async (uri, body) => {
       expect(body).toMatchObject({
         name: packageName,
+        versions: {
+          "0.0.0-PLACEHOLDER": {
+            homepage: "https://github.com/xc2/barhop",
+            gitHead: "3662536f93fb61b95e9a6c7106ba4bcfa2694115",
+          },
+        },
         _attachments: {
           [`${packageName}-0.0.0-PLACEHOLDER.sigstore`]: {
             data: expect.any(String),
@@ -171,7 +177,6 @@ describe("publish", () => {
   });
   test("add fields", async () => {
     nockScope.put(`/barhop`).reply(async (uri, body) => {
-      console.log(body);
       expect(body).toMatchObject({
         name: "barhop",
         versions: {

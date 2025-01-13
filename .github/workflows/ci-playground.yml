@@ -15,6 +15,8 @@ jobs:
       matrix:
         node-version: [20.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+    permissions:
+      id-token: write
 
     steps:
     - uses: actions/checkout@v4
@@ -31,3 +33,18 @@ jobs:
 
     - name: Install dependencies
       run: pnpm install
+
+    - name: Publish
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN_PLAY }}
+      run: |
+        PKG_VER=0.0.0-play.$(date +%s)
+        # prepare two tarballs
+        pnpx tsx nppr/bin.ts tests/__fixtures__/barhop-0.0.0-PLACEHOLDER.tgz --repack --name nppr-play-1 --output 1.tgz
+        pnpx tsx nppr/bin.ts tests/__fixtures__/barhop-0.0.0-PLACEHOLDER.tgz --repack --name nppr-play-2 --output 2.tgz
+        # repack
+        mkdir -p dist
+        pnpx tsx nppr/bin.ts '*.tgz' --repack --name '@canary-109cafe/[name]' --version "$PKG_VER" --output 'dist/[basename][extname]' --provenance 'dist/provenances.sigstore'
+        ls -allh dist
+        # publish
+        pnpx tsx nppr/bin.ts dist/*.tgz --provenance-from dist/provenances.sigstore --publish --add-fields.readmeFilename 'PACKAGE.md' --tag latest

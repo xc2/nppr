@@ -10,6 +10,7 @@
     "@npm/types": "^2.0.0",
     "@sigstore/mock": "^0.9.0",
     "@types/libnpmpublish": "^9.0.1",
+    "@types/lodash-es": "^4.17.12",
     "@types/node": "^22.10.5",
     "@types/npm-package-arg": "^6.1.4",
     "@types/ssri": "^7.1.5",
@@ -18,6 +19,7 @@
     "glob": "^11.0.0",
     "just-compare": "^2.3.0",
     "libnpmpublish": "^11.0.0",
+    "lodash-es": "^4.17.21",
     "nock": "^13.5.6",
     "npm-package-arg": "^12.0.1",
     "tar": "^7.4.3",
@@ -27,7 +29,7 @@
   "nano-staged": {
     "*.{js,ts,cts,mts}": "biome check --write --diagnostic-level=error --no-errors-on-unmatched"
   },
-  "packageManager": "pnpm@9.12.3+sha512.cce0f9de9c5a7c95bef944169cc5dfe8741abfb145078c0d508b868056848a87c81e626246cb60967cbd7fd29a6c062ef73ff840d96b3c86c40ac92cf4a813ee",
+  "packageManager": "pnpm@9.15.3+sha512.1f79bc245a66eb0b07c5d4d83131240774642caaa86ef7d0434ab47c0d16f66b04e21e0c086eb61e62c77efc4d7f7ec071afad3796af64892fae66509173893a",
   "pnpm": {
     "overrides": {
       "nock": "^13.5.6"

@@ -7,10 +7,10 @@ import {
 import { test } from "tests/vitest";
 import { describe, expect, vi } from "vitest";
 import { inputSource } from "../utils";
-import { PackagePackOptions } from "./constants";
+import { PackageJsonPath, PackagePackOptions } from "./constants";
 import { digestStream } from "./crypto";
 import { findMapAsync } from "./lang";
-import type { Manifest } from "./package";
+import { getManifest } from "./package";
 import { duplicate } from "./stream";
 import { iterEntries, transformTarball } from "./tar";
 
@@ -24,7 +24,7 @@ describe("iterEntries", () => {
 
     for await (const [entry, s] of iter) {
       iterCount++;
-      if (entry.path === "package/package.json") {
+      if (entry.path === PackageJsonPath) {
         break;
       }
     }
@@ -32,14 +32,14 @@ describe("iterEntries", () => {
     expect(fn).toHaveBeenCalledTimes(iterCount + 1);
     expect(fn).toHaveBeenNthCalledWith(
       iterCount,
-      expect.objectContaining({ path: "package/package.json" })
+      expect.objectContaining({ path: PackageJsonPath })
     );
   });
 
   test("can read data on loop", async () => {
     const manifest = (async () => {
       for await (const [entry, reader] of iterEntries(inputSource(BasicTarballPath))) {
-        if (entry.path === "package/package.json") {
+        if (entry.path === PackageJsonPath) {
           return reader.json();
         }
       }
@@ -58,11 +58,14 @@ describe("transformTarball", () => {
   test("tarball should keep as is if all entry is not changed", async () => {
     const source1 = inputSource(BasicTarballPath);
     const output = source1.pipeThrough(
-      transformTarball(async (entry, reader) => {
-        if (entry.path === "package/package.json") {
-          return new Blob([await reader.text()]);
-        }
-      }, PackagePackOptions)
+      transformTarball(
+        {
+          [PackageJsonPath]: async (reader) => {
+            return new Blob([await reader.text()]);
+          },
+        },
+        PackagePackOptions
+      )
     );
     await expect(digestStream(output)).resolves.toStrictEqual(BasicTarballSHA512);
   });
@@ -76,12 +79,15 @@ describe("transformTarball", () => {
     };
     const [source, output] = duplicate(inputSource(BasicTarballPath), (source) =>
       source.pipeThrough(
-        transformTarball(async (entry, reader) => {
-          if (entry.path === "package/package.json") {
-            await new Promise((resolve) => setTimeout(resolve, 50));
-            return new Blob([await reader.text()]);
-          }
-        }, PackagePackOptions)
+        transformTarball(
+          {
+            [PackageJsonPath]: async (reader) => {
+              await new Promise((resolve) => setTimeout(resolve, 50));
+              return new Blob([await reader.text()]);
+            },
+          },
+          PackagePackOptions
+        )
       )
     );
 
@@ -91,20 +97,39 @@ describe("transformTarball", () => {
   test("transforming should work", async () => {
     const source1 = inputSource(BasicTarballPath);
     const output = source1.pipeThrough(
-      transformTarball(async (entry, reader) => {
-        if (entry.path === "package/package.json") {
-          return new Blob([JSON.stringify({ ...(await reader.json()), name: "test" })]);
-        }
-      }, PackagePackOptions)
+      transformTarball(
+        {
+          [PackageJsonPath]: async (reader) => {
+            return new Blob([JSON.stringify({ ...(await reader.json()), name: "test" })]);
+          },
+        },
+        PackagePackOptions
+      )
     );
     const [output1, digest] = duplicate(output, digestStream);
     // @ts-ignore
     await expect(digest).resolves.not.toStrictEqual(BasicTarballSHA512);
-    const manifest = findMapAsync(iterEntries(output1), async ([entry, reader]) => {
-      if (entry.path === "package/package.json") {
-        return reader.json<Manifest>();
+    const manifest = getManifest(output1);
+    await expect(manifest).resolves.toMatchObject({ name: "test" });
+  });
+
+  test("allow adding new entry", async () => {
+    const source = inputSource(BasicTarballPath);
+    const output = source.pipeThrough(
+      transformTarball(
+        {
+          "new-entry": async () => {
+            return new Blob(["new-entry"]);
+          },
+        },
+        PackagePackOptions
+      )
+    );
+    const newEntry = findMapAsync(iterEntries(output), async ([entry, reader]) => {
+      if (entry.path === "new-entry") {
+        return reader.text();
       }
     });
-    await expect(manifest).resolves.toMatchObject({ name: "test" });
+    await expect(newEntry).resolves.toBe("new-entry");
   });
 });

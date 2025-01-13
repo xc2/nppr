@@ -1,6 +1,8 @@
 import compare from "just-compare";
-import { PackagePackOptions } from "./internals/constants";
-import { type Manifest, mutateDependencies, mutateFields } from "./internals/package";
+import type { ReadEntry } from "tar";
+import { PackageJsonPath, PackagePackOptions } from "./internals/constants";
+import { type Manifest, getManifest, mutateDependencies, mutateFields } from "./internals/package";
+import { type StreamReader, duplicate } from "./internals/stream";
 import { type TarTransformer, transformTarball } from "./internals/tar";
 import { type InputSource, inputSource, renderTpl } from "./utils";
 
@@ -24,8 +26,17 @@ export function repack(
   });
   return Array.isArray(packages) ? rs : rs[0];
 }
+
 export interface PackageJsonTransformer {
   (pkg: Manifest): Manifest | undefined;
+}
+
+export interface RepackTransformer {
+  (
+    manifest: Manifest,
+    reader: StreamReader,
+    entry?: ReadEntry
+  ): PromiseLike<ReadableStream | Blob | undefined | false> | undefined | false;
 }
 
 export interface RepackOptions {
@@ -33,32 +44,50 @@ export interface RepackOptions {
   version?: string;
   remapDeps?: Record<string, string>;
   packageJson?: Manifest | PackageJsonTransformer;
-  transform?: TarTransformer;
+  transform?: Record<string, RepackTransformer | ReturnType<RepackTransformer>>;
 }
 
 export function createRepack(options: RepackOptions = {}) {
-  return transformTarball(async (entry, reader) => {
-    if (entry.path === "package/package.json") {
-      const text = await reader.text();
-      let manifest = JSON.parse(text) as Manifest;
-      if (options.packageJson) {
-        if (typeof options.packageJson === "function") {
-          const r = options.packageJson(manifest);
-          if (r) manifest = r;
-        } else {
-          manifest = options.packageJson;
-        }
+  const es = new TransformStream();
+  const [readable, manifest] = duplicate(es.readable, async (r) => {
+    let manifest = await getManifest(r);
+    if (options.packageJson) {
+      if (typeof options.packageJson === "function") {
+        const r = options.packageJson(manifest);
+        if (r) manifest = r;
+      } else {
+        manifest = options.packageJson;
       }
-      mutateFields(manifest, {
-        name: options.name && renderTpl(options.name, manifest),
-        version: options.version && renderTpl(options.version, manifest),
-      });
-      mutateDependencies(manifest, options.remapDeps);
-      const unchanged = compare(JSON.parse(text), manifest);
-      return new Blob([unchanged ? text : JSON.stringify(manifest, null, 2)], {
-        type: "application/json",
-      });
     }
-    return options.transform?.(entry, reader);
-  }, PackagePackOptions);
+    mutateFields(manifest, {
+      name: options.name && renderTpl(options.name, manifest),
+      version: options.version && renderTpl(options.version, manifest),
+    });
+    mutateDependencies(manifest, options.remapDeps);
+    return manifest;
+  });
+  const transform = Object.fromEntries(
+    Object.entries({ ...options.transform }).map(([k, v]) => [
+      `package/${k}`,
+      typeof v === "function"
+        ? ((async (reader, entry) => v(await manifest, reader, entry)) as TarTransformer)
+        : v,
+    ])
+  );
+  const pkgTrans = transformTarball(
+    {
+      ...transform,
+      [PackageJsonPath]: async (reader) => {
+        const text = await reader.text();
+        const unchanged = compare(JSON.parse(text), await manifest);
+
+        return new Blob([unchanged ? text : JSON.stringify(await manifest, null, 2)]);
+      },
+    },
+    PackagePackOptions
+  );
+  return {
+    writable: es.writable,
+    readable: readable.pipeThrough(pkgTrans),
+  };
 }

@@ -6,7 +6,9 @@ import {
   BasicTarballSHA512,
 } from "../tests/__fixtures__/tarball";
 import { digestStream } from "./internals/crypto";
+import { findMapAsync } from "./internals/lang";
 import { getManifest } from "./internals/package";
+import { iterEntries } from "./internals/tar";
 import { repack } from "./repack";
 
 describe("options", () => {
@@ -64,5 +66,25 @@ describe("transform", () => {
       name: "@109cafe-canary/barhop",
       version: "0.0.0-barhop",
     });
+  });
+
+  test("allow adding files", async () => {
+    const output = repack(
+      { source: BasicTarballPath },
+      {
+        name: "foo",
+        version: "1.0.0",
+        transform: {
+          "README.md": async (manifest) => new Blob([`# ${manifest.name}@${manifest.version}`]),
+        },
+      }
+    );
+    const readme = findMapAsync(iterEntries(output), async ([entry, reader]) => {
+      if (entry.path === "package/README.md") {
+        return reader.text();
+      }
+    });
+
+    await expect(readme).resolves.toBe("# foo@1.0.0");
   });
 });

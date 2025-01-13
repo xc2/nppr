@@ -1,5 +1,7 @@
 import { createReadStream } from "node:fs";
+import npa from "npm-package-arg";
 import { tryToNumber } from "./internals/lang";
+import type { Manifest } from "./internals/package";
 import { bufferToReadable, toReadableStream } from "./internals/stream";
 
 export type InputSource =
@@ -59,6 +61,12 @@ export function renderTpl(
     const v = variables[key] ?? "";
     return _escape ? _escape(v, key) : v;
   });
+}
+
+export function toPurl(manifest: Pick<Manifest, "name" | "version">) {
+  const spec = npa.resolve(manifest.name, manifest.version);
+  // @ts-ignore
+  return npa.toPurl(spec) as string;
 }
 
 export function getPublishManifestFields() {

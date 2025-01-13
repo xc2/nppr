@@ -26,15 +26,21 @@ jobs:
         cd packages/nppr && npm pack && cd ../..
         cd packages/nppr-core && npm pack && cd ../..
 
-    - name: Publish
+    - name: Repack
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN_PLAY }}
       run: |
         BR_SLUG=${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}
         BR_SLUG=$(echo -n "$BR_SLUG" | perl -pe 's/[^a-zA-Z-_]/-/g' | cut -c1-20)
         PKG_VER="0.0.0-${BR_SLUG}.${GITHUB_RUN_ID}"
-        mkdir -p artifacts
-        pnpx tsx nppr/bin.ts 'packages/*/*.tgz' --repack --readme PACKAGE.md --name '@canary-109cafe/[unscopedPart]' --version "$PKG_VER" --output "artifacts/[basename][extname]" --provenance 'artifacts/provenances.sigstore'
+        rm -rf artifacts
+        mkdir  artifacts
+        pnpx tsx nppr/bin.ts 'packages/*/*.tgz' --repack --readme PACKAGE.md --name '@canary-109cafe/[unscopedPart]' --version "$PKG_VER" --output "artifacts/[name]-[version][extname]" --provenance 'artifacts/provenances.sigstore'
         ls -allh artifacts
+        
         # publish
         #pnpx tsx nppr/bin.ts dist/*.tgz --provenance-from dist/provenances.sigstore --publish --tag latest
+    - uses: actions/upload-artifact@v4
+      with:
+        name: artifacts
+        path: artifacts

@@ -1,4 +1,5 @@
 import { Header, Pack, Parser, ReadEntry } from "tar";
+import type { MaybePromise } from "./lang";
 import {
   type StreamReader,
   bufferToReadable,
@@ -13,7 +14,7 @@ export interface TarTransformer {
   (
     reader: StreamReader,
     entry?: ReadEntry
-  ): PromiseLike<ReadableStream | Blob | undefined | false> | undefined | false;
+  ): MaybePromise<ReadableStream | Blob | undefined | false>;
 }
 
 export function transformTarball(

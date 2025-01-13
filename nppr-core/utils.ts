@@ -1,6 +1,7 @@
 import { createReadStream } from "node:fs";
 import npa from "npm-package-arg";
 import { tryToNumber } from "./internals/lang";
+import { template as _template } from "./internals/lang/template";
 import type { Manifest } from "./internals/package";
 import { bufferToReadable, toReadableStream } from "./internals/stream";
 
@@ -48,20 +49,8 @@ export function inputSource(source: InputSource): ReadableStream {
   return bufferToReadable(source);
 }
 
-export function renderTpl(
-  tpl: string,
-  variables: Record<string, any>,
-  options?: { replaceUnknown?: boolean; escape?: (value: any, key: string) => string }
-) {
-  const { replaceUnknown = false, escape: _escape } = options ?? {};
-  return tpl.replace(/\[([^\]]+)]/g, (match, key: string) => {
-    if (!(key in variables)) {
-      return replaceUnknown ? "" : match;
-    }
-    const v = variables[key] ?? "";
-    return _escape ? _escape(v, key) : v;
-  });
-}
+export const inlineTemplate = _template.bind(null, /\[([^\]]+)]/g);
+export const template = _template.bind(null, /\{\{([^}]+)}}/g);
 
 export function toPurl(manifest: Pick<Manifest, "name" | "version">) {
   const spec = npa.resolve(manifest.name, manifest.version);

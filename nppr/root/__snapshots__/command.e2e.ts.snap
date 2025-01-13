@@ -1,0 +1,11 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`repack > readme file 1`] = `
+"# foo
+
+## Installation
+
+\`\`\`bash
+npm install foo@1.0.0
+\`\`\`"
+`;

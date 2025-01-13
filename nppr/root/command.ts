@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { glob } from "glob";
 import { tryToNumber } from "nppr-core";
 import { attest } from "nppr-core/provenance";
@@ -17,7 +18,7 @@ export const rootCommand: CliCommand = (cmd) => {
     )
     .option("--name <name>", "[Repack] Overrides `package.json/name` on repacking")
     .option("--version <version>", "[Repack] Overrides `package.json/version` on repacking")
-    .option("--readme [filepath]", "[Repack] Overrides `package.json/version` on repacking")
+    .option("--readme [filepath]", "[Repack] Readme file to include in the repacked tarball")
     .option("--remap <remap>", "[Repack] Remap dependencies/optionalDependencies on repacking")
     .option(
       "--provenance [filepath]",
@@ -75,6 +76,9 @@ export const rootCommand: CliCommand = (cmd) => {
             name: options.name,
             version: options.version,
             remapDeps: options.remap,
+            transform: {
+              "README.md": options.readme && readFile(options.readme, "utf8"),
+            },
           }
         ).forEach((output, i) => {
           pkgs[i].source = output;

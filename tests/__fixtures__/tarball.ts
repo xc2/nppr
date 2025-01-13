@@ -1,6 +1,7 @@
 import { sliceView } from "../../nppr-core/internals/encoding";
 
 export const BasicTarballPath = new URL("./barhop-0.0.0-PLACEHOLDER.tgz", import.meta.url).pathname;
+export const ReadmeTemplate = new URL("./readme.md.tpl", import.meta.url).pathname;
 // tar ztvf - | wc -l
 export const BasicTarballEntryCount = 34;
 const sha512 =

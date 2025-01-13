@@ -5,7 +5,7 @@ import type { MaybePromise } from "./internals/lang/type-helpers";
 import { type Manifest, getManifest, mutateDependencies, mutateFields } from "./internals/package";
 import { type StreamReader, duplicate } from "./internals/stream";
 import { type TarTransformer, transformTarball } from "./internals/tar";
-import { type InputSource, inlineTemplate, inputSource, template } from "./utils";
+import { type InputSource, inlineTemplate, inputSource, packageName, template } from "./utils";
 
 export interface RepackPackage extends RepackOptions {
   source: InputSource;
@@ -80,9 +80,10 @@ export function createRepack(options: RepackOptions = {}) {
         manifest = options.packageJson;
       }
     }
+    const tplVars = { ...manifest, ...packageName(manifest.name) };
     mutateFields(manifest, {
-      name: options.name && inlineTemplate(options.name)(manifest),
-      version: options.version && inlineTemplate(options.version)(manifest),
+      name: options.name && inlineTemplate(options.name)(tplVars),
+      version: options.version && inlineTemplate(options.version)(tplVars),
     });
     mutateDependencies(manifest, options.remapDeps);
     return manifest;

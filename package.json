@@ -3,6 +3,7 @@
   "version": "x.x.x",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://github.com/xc2/nppr",
   "scripts": {
     "build": "pnpm rslib build",
     "prepare": "pnpm --package husky@9.1.1 dlx husky",

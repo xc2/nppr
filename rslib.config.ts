@@ -13,6 +13,7 @@ const libnpmpublishDeps = Object.fromEntries(
 const packageJson = {
   version: "0.0.0-PLACEHOLDER",
   license: projectManifest.license,
+  homepage: projectManifest.homepage,
 };
 export default defineConfig({
   lib: [

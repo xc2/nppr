@@ -58,6 +58,19 @@ export function toPurl(manifest: Pick<Manifest, "name" | "version">) {
   return npa.toPurl(spec) as string;
 }
 
+export function packageName(name: string) {
+  if (name.startsWith("@")) {
+    const [scope, unscoped] = name.slice(1).split("/");
+    return {
+      scope,
+      unscoped,
+      pathPart: `${scope}-${unscoped}`,
+      unscopedPart: `${scope}__${unscoped}`,
+    };
+  }
+  return { scope: "", unscoped: name, pathPart: name, unscopedPart: name };
+}
+
 export function getPublishManifestFields() {
   return [
     "name",

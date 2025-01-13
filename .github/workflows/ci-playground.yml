@@ -1,6 +1,3 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
 name: CI Playground
 
 on:
@@ -11,40 +8,30 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [20.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     permissions:
       id-token: write
 
     steps:
     - uses: actions/checkout@v4
     - uses: pnpm/action-setup@v4
-      name: Install pnpm
       with:
         run_install: false
-
-    - name: Install Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+    - uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 20
         cache: 'pnpm'
-
-    - name: Install dependencies
-      run: pnpm install
+    - run: pnpm install
+    - run: pnpm build
 
     - name: Publish
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN_PLAY }}
       run: |
-        PKG_VER=0.0.0-play.$(date +%s)
-        # prepare two tarballs
-        pnpx tsx nppr/bin.ts tests/__fixtures__/barhop-0.0.0-PLACEHOLDER.tgz --repack --name nppr-play-1 --output 1.tgz
-        pnpx tsx nppr/bin.ts tests/__fixtures__/barhop-0.0.0-PLACEHOLDER.tgz --repack --name nppr-play-2 --output 2.tgz
-        # repack
-        mkdir -p dist
-        pnpx tsx nppr/bin.ts '*.tgz' --repack --name '@canary-109cafe/[name]' --version "$PKG_VER" --readme tests/__fixtures__/readme.md.tpl --output 'dist/[basename][extname]' --provenance 'dist/provenances.sigstore'
-        ls -allh dist
+        BR_SLUG=${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}
+        BR_SLUG=$(echo -n "$BR_SLUG" | perl -pe 's/[^a-zA-Z-_]/-/g' | cut -c1-20)
+        PKG_VER="0.0.0-${BR_SLUG}.${GITHUB_RUN_ID}"
+        mkdir -p artifacts
+        pnpx tsx nppr/bin.ts 'packages/*/*.tgz' --repack --name '@canary-109cafe/[unscopedPart]' --version "$PKG_VER" --output "artifacts/[basename][extname]" --provenance 'artifacts/provenances.sigstore'
+        ls -allh artifacts
         # publish
-        pnpx tsx nppr/bin.ts dist/*.tgz --provenance-from dist/provenances.sigstore --publish --tag latest
+        #pnpx tsx nppr/bin.ts dist/*.tgz --provenance-from dist/provenances.sigstore --publish --tag latest

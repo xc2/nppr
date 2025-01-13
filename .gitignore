@@ -33,3 +33,4 @@ tsdoc-metadata.json
 temp/
 !**/__fixtures__/**/*.tgz
 /a.ts
+/packages/

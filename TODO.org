@@ -1,6 +1,13 @@
 * to-do-list
 
-** TODO support web
+** TODO nppr-core support web
 - [ ] No [[https://github.com/isaacs/node-tar][=node-tar=]] compatible tar library that supports web :BLOCK:
+- [ ] Require a sigstore library that supports web :BLOCK:
 - [ ] Separate codes that depends =node:= modules and import via =#mod=
-** TODO support template for repack name
+** TODO unify the way rename/reversion and remap dependencies
+version template?
+** TODO supports version bumping based on published version
+This depends on the registry, I'm not such glad to support this.
+** TODO DX Improvement
+- [ ] Add logger to =nppr-core= and =nppr=
+** TODO generate publishing script for running everywhere

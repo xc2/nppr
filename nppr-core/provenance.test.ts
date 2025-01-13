@@ -1,15 +1,14 @@
-// @ts-ignore
-import { generateProvenance } from "libnpmpublish/lib/provenance";
 import { BasicTarballPath, BasicTarballSubject } from "tests/__fixtures__/tarball";
 import { mockImplementation, test } from "tests/vitest";
 import { afterAll, describe, expect, vi } from "vitest";
 import { attest, generateSubject, generateSubjects } from "./provenance";
+import { generateProvenance } from "./third_party/libnpmpublish";
 import { inputSource } from "./utils";
 
-vi.mock("libnpmpublish/lib/provenance", { spy: true });
+vi.mock("./third_party/libnpmpublish", { spy: true });
 
 afterAll(() => {
-  vi.doUnmock("libnpmpublish/lib/provenance");
+  vi.doUnmock("./third_party/libnpmpublish");
 });
 
 describe("Provenance Subject", () => {

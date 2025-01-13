@@ -1,8 +1,7 @@
-// @ts-ignore
-import { generateProvenance } from "libnpmpublish/lib/provenance";
 import { digestStream } from "./internals/crypto";
 import { toHex } from "./internals/encoding";
 import { type Manifest, getManifest } from "./internals/package";
+import { generateProvenance } from "./third_party/libnpmpublish";
 import { type InputSource, inputSource, toPurl } from "./utils";
 
 interface IdentityProvider {

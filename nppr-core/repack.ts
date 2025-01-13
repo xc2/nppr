@@ -1,10 +1,11 @@
 import compare from "just-compare";
 import type { ReadEntry } from "tar";
 import { PackageJsonPath, PackagePackOptions } from "./internals/constants";
+import type { MaybePromise } from "./internals/lang/type-helpers";
 import { type Manifest, getManifest, mutateDependencies, mutateFields } from "./internals/package";
 import { type StreamReader, duplicate } from "./internals/stream";
 import { type TarTransformer, transformTarball } from "./internals/tar";
-import { type InputSource, inputSource, renderTpl } from "./utils";
+import { type InputSource, inlineTemplate, inputSource, template } from "./utils";
 
 export interface RepackPackage extends RepackOptions {
   source: InputSource;
@@ -36,7 +37,7 @@ export interface RepackTransformer {
     manifest: Manifest,
     reader: StreamReader,
     entry?: ReadEntry
-  ): PromiseLike<ReadableStream | Blob | undefined | false> | undefined | false;
+  ): MaybePromise<ReadableStream | Blob | undefined | false>;
 }
 
 export interface RepackOptions {
@@ -44,7 +45,27 @@ export interface RepackOptions {
   version?: string;
   remapDeps?: Record<string, string>;
   packageJson?: Manifest | PackageJsonTransformer;
-  transform?: Record<string, RepackTransformer | ReturnType<RepackTransformer>>;
+  transform?: Record<
+    string,
+    MaybePromise<string> | RepackTransformer | ReturnType<RepackTransformer>
+  >;
+}
+
+function toTarTransformer(
+  t: MaybePromise<string> | RepackTransformer | ReturnType<RepackTransformer>,
+  manifest: MaybePromise<Manifest>
+): TarTransformer | ReturnType<TarTransformer> {
+  if (typeof t === "function") {
+    return async (reader, entry) => t(await manifest, reader, entry);
+  }
+  if (t === false || t === undefined || t === null) return t;
+  return async () => {
+    const r = await t;
+    if (typeof r === "string") {
+      return new Blob([template(r, { replaceUnknown: true })(await manifest)]);
+    }
+    return r;
+  };
 }
 
 export function createRepack(options: RepackOptions = {}) {
@@ -60,8 +81,8 @@ export function createRepack(options: RepackOptions = {}) {
       }
     }
     mutateFields(manifest, {
-      name: options.name && renderTpl(options.name, manifest),
-      version: options.version && renderTpl(options.version, manifest),
+      name: options.name && inlineTemplate(options.name)(manifest),
+      version: options.version && inlineTemplate(options.version)(manifest),
     });
     mutateDependencies(manifest, options.remapDeps);
     return manifest;
@@ -69,9 +90,7 @@ export function createRepack(options: RepackOptions = {}) {
   const transform = Object.fromEntries(
     Object.entries({ ...options.transform }).map(([k, v]) => [
       `package/${k}`,
-      typeof v === "function"
-        ? ((async (reader, entry) => v(await manifest, reader, entry)) as TarTransformer)
-        : v,
+      toTarTransformer(v, manifest),
     ])
   );
   const pkgTrans = transformTarball(

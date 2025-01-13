@@ -6,7 +6,8 @@ import { getManifest, inputSource } from "nppr-core";
 import { generateSubject } from "nppr-core/provenance";
 import { stubEnvs, test } from "tests/vitest";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect } from "vitest";
-import { BasicTarballPath } from "../../tests/__fixtures__/tarball";
+import { BasicTarballPath, ReadmeTemplate } from "../../tests/__fixtures__/tarball";
+import { entryText } from "../../tests/helpers/iterator";
 import { simpleJWT } from "../../tests/helpers/jwt";
 import { registerCommand } from "../utils/cac";
 import { rootCommand } from "./command";
@@ -66,6 +67,22 @@ describe("repack", () => {
       name: "barhop",
       version: "0.0.0-PLACEHOLDER",
     });
+  });
+  test("readme file", async ({ file }) => {
+    const tarball = file("repacked.tgz");
+    await runCli([
+      "--repack",
+      "--name",
+      "foo",
+      "--version",
+      "1.0.0",
+      "--readme",
+      ReadmeTemplate,
+      "--output",
+      tarball,
+      BasicTarballPath,
+    ]);
+    await expect(entryText(tarball, "README.md")).resolves.toMatchSnapshot();
   });
   test("rename, reversion, output to file with default name", async ({ file }) => {
     const source = file("source.tgz");

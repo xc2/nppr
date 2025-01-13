@@ -1,7 +1,7 @@
 import { createWriteStream } from "node:fs";
 import * as NodePath from "node:path";
 import { Writable } from "node:stream";
-import { type Manifest, getManifest, inputSource, renderTpl, tryToNumber } from "nppr-core";
+import { type Manifest, getManifest, inlineTemplate, inputSource, tryToNumber } from "nppr-core";
 
 export function pathInfo(path: string, cwd: string) {
   const abs = NodePath.resolve(cwd, path);
@@ -93,6 +93,6 @@ export class Package {
       }
       return `${value}`.replace(/[^0-9a-zA-Z-._]/g, "_");
     };
-    return NodePath.resolve(this.cwd, renderTpl(p, variables, { escape: _escape }));
+    return NodePath.resolve(this.cwd, inlineTemplate(p, { escape: _escape })(variables));
   }
 }

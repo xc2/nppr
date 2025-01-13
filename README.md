@@ -55,7 +55,7 @@ Multiple tarballs are supported as inputs.
 
 - [x] feat: repack
 - [x] feat: provenance
-- [ ] feat: publish
-- [ ] tests
+- [x] feat: publish
+- [x] tests
 - [ ] release
 - [ ] docs

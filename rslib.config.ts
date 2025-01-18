@@ -34,7 +34,7 @@ export default defineConfig({
       output: {
         target: "node",
         distPath: { root: "packages/nppr-core/third_party/libnpmpublish" },
-        externals: npprCoreDeps.concat([getNodeJsExternals()]).concat(libnpmpublishExternals),
+        externals: npprCoreDeps.concat(libnpmpublishExternals),
       },
     },
 
@@ -77,9 +77,9 @@ export default defineConfig({
     },
 
     {
-      id: "nppr",
+      id: "nppr:cli",
       bundle: true,
-      format: "esm",
+      format: "cjs",
       syntax: "es2022",
       autoExternal: false,
       source: {
@@ -87,17 +87,27 @@ export default defineConfig({
           nppr: "nppr/bin.ts",
         },
       },
+      performance: {
+        chunkSplit: { strategy: "all-in-one" },
+      },
+      tools: {
+        rspack: {
+          output: {
+            asyncChunks: false,
+          },
+        },
+      },
       output: {
         target: "node",
         distPath: { root: "packages/nppr" },
-        externals: [].concat(getNodeJsExternals()),
         copy: [
           {
             from: "nppr/package.json",
             async transform(buf) {
               const pkg = JSON.parse(buf.toString());
               Object.assign(pkg, packageJson);
-              pkg.bin = "nppr.js";
+              pkg.bin = "nppr.cjs";
+              pkg.type = "commonjs";
 
               return Buffer.from(JSON.stringify(pkg, null, 2));
             },
@@ -127,31 +137,4 @@ function getDependencies(list: string[]) {
     }
     return deps;
   }, {} as any);
-}
-
-function getNodeJsExternals() {
-  const entries = [
-    "assert",
-    "buffer",
-    "crypto",
-    "dns",
-    "events",
-    "fs",
-    "http",
-    "http2",
-    "https",
-    "module",
-    "net",
-    "os",
-    "path",
-    "querystring",
-    "stream",
-    "string_decoder",
-    "tls",
-    "tty",
-    "url",
-    "util",
-    "zlib",
-  ].map((v) => [v, `node:${v}`]);
-  return Object.fromEntries(entries);
 }

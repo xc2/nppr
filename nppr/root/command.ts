@@ -1,4 +1,6 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
+import * as NodePath from "node:path";
+import * as process from "node:process";
 import { glob } from "glob";
 import { tryToNumber } from "nppr-core";
 import { attest } from "nppr-core/provenance";
@@ -8,52 +10,68 @@ import { ArgumentsError, type CliCommand } from "../utils/cac";
 import { Package } from "../utils/package";
 import { ProvenanceBundle } from "../utils/provenance-bundle";
 import { secretFrom } from "../utils/secret-from";
+import { isOptionDefined, normalizeOutPath } from "./options";
+
+async function ensureDir(dir: string) {
+  const p = NodePath.resolve(process.cwd(), dir);
+  await mkdir(p, { recursive: true });
+  return p;
+}
 
 export const rootCommand: CliCommand = (cmd) => {
-  return cmd("[...inputs]")
-    .option("--repack", "[Repack] Repack the tarball")
-    .option(
-      "--output [filepath]",
-      "[Repack] Save the repacked tarball to a file, by default nothing will be written"
-    )
-    .option("--name <name>", "[Repack] Overrides `package.json/name` on repacking")
-    .option("--version <version>", "[Repack] Overrides `package.json/version` on repacking")
-    .option("--readme [filepath]", "[Repack] Readme file to include in the repacked tarball")
-    .option("--remap <remap>", "[Repack] Remap dependencies/optionalDependencies on repacking")
-    .option(
-      "--provenance [filepath]",
-      "[Provenance] Generate and attest the provenance of the package"
-    )
-    .option("--registry <url>", "Package Registry URL", { default: "https://registry.npmjs.org" })
-    .option("--publish", "[Publish] Publish the package to the registry")
-    .option("--token", "[Publish] Publish Token, e.g., `env:NPM_TOKEN` or `file:./npm-token`", {
-      default: "env:NPM_TOKEN",
+  const command = cmd("[...inputs]");
+  return command
+    .usage(`[...**INPUTS**] [**OPTIONS**]`)
+    .option("--outbase [path]", "Base path of all **OUTPATH** options.", {
+      default: "nppr-out",
     })
     .option(
+      "--tarball [OUTPATH]",
+      "Repack/Copy packages to the specified path. Enabled by default if `--publish` is not set."
+    )
+    .option("--name <name>", "**[Repack]** with `package.json/name` overridden")
+    .option("--version <version>", "**[Repack]** with `package.json/version` overridden")
+    .option(
+      "--readme <frompath>",
+      "**[Repack]** with `README.md` overridden. Should be a file path"
+    )
+    .option("--remap <REMAP>", "**[Repack]** with dependencies/optionalDependencies overridden")
+    .option(
+      "--provenance [OUTPATH]",
+      "**[Provenance]** Generate and attest the provenance of the package. Write to disk by default if `--publish` is not set."
+    )
+    .option("--publish", "**Publish** the input or repacked packages")
+    .option("--registry <url>", "**[Publish]** to specific registry", {
+      default: "https://registry.npmjs.org",
+    })
+    .option(
+      "--token <tokenfrom>",
+      "**[Publish]** with specific token. nppr will not load token from npmrc",
+      {
+        default: "env:NPM_TOKEN",
+      }
+    )
+    .option(
       "--keep-fields [fields]",
-      "[Publish] Don't remove meaningless fields from manifest on publish"
+      "**[Publish]** without cleaning meaningless fields from manifest"
     )
-    .option("--add-fields [fields]", "[Publish] Additional fields to add to the manifest")
-    .option("--tag <fields>", "[Publish] Dist-tag to publish the package with")
-    .option("--provenance-from <filepath>", "[Publish] Provenance bundle from file")
-    .example(
-      (bin) =>
-        `  Rename a package
+    .option("--add-fields [fields]", "**[Publish]** with additional fields to manifest")
+    .option("--tag <fields>", "**[Publish]** with specific dist tag")
+    .option("--provenance-from <frompath>", "**[Publish]** with existing provenance file")
 
-    $ ${bin} --repack bar-0.0.0.tgz --name foo --output
-  
-  Re-version a package
-
-    $ ${bin} --repack bar-0.0.0.tgz --version 0.1.1 --output
-`
-    )
     .action(async (inputs: string[], options) => {
-      if (options.repack && options.provenanceFrom) {
-        throw new ArgumentsError("Cannot use --repack and --provenance-from together");
+      const shouldRepack = [options.name, options.version, options.remap, options.readme].some(
+        isOptionDefined
+      );
+      if (shouldRepack && options.provenanceFrom) {
+        throw new ArgumentsError("Cannot repack and load existing provenance at the same time");
       }
       if (options.provenance && options.provenanceFrom) {
-        throw new ArgumentsError("Cannot use --provenance and --provenance-from together");
+        throw new ArgumentsError(
+          "Cannot generate provenance and load existing provenance at the same time"
+        );
       }
+
       const _inputs = inputs.map(tryToNumber);
       const _paths = _inputs.filter((v) => typeof v === "string");
       const _fds = _inputs.filter((v) => typeof v === "number");
@@ -67,9 +85,18 @@ export const rootCommand: CliCommand = (cmd) => {
       }
 
       const writings: PromiseLike<any>[] = [];
+      const DefaultOutpathToken = options.publish ? "none" : "auto";
+      const output = normalizeOutPath(
+        typeof options.tarball === "string" ? options.tarball : DefaultOutpathToken,
+        "[name]-[version][extname]"
+      );
+      const provenanceOutput = normalizeOutPath(
+        typeof options.provenance === "string" ? options.provenance : DefaultOutpathToken,
+        "provenance.sigstore"
+      );
 
       // #region Repack
-      if (options.repack) {
+      if ([options.name, options.version, options.remap, options.readme].some(isOptionDefined)) {
         repack(
           pkgs.map((v) => ({ source: v.source })),
           {
@@ -86,15 +113,9 @@ export const rootCommand: CliCommand = (cmd) => {
       }
       // #endregion
       // #region Output
-      if (options.output) {
+      if (output) {
         for (const pkg of pkgs) {
-          writings.push(
-            pkg.output(
-              typeof options.output === "string"
-                ? options.output
-                : "[path]/[name]-[version]_repacked[extname]"
-            )
-          );
+          writings.push(pkg.output(NodePath.resolve(await ensureDir(options.outbase), output)));
         }
       }
       // #endregion
@@ -108,8 +129,12 @@ export const rootCommand: CliCommand = (cmd) => {
           const provenance = await attest([{ source: pkg.tee(), manifest: pkg.manifest }], {});
           provenanceBundle.add(provenance);
         }
-        if (typeof options.provenance === "string") {
-          writings.push(provenanceBundle.outputBundle(options.provenance));
+        if (provenanceOutput) {
+          writings.push(
+            provenanceBundle.outputBundle(
+              NodePath.resolve(await ensureDir(options.outbase), provenanceOutput)
+            )
+          );
         }
       } else if (options.provenanceFrom) {
         provenanceBundle = await ProvenanceBundle.fromFile(options.provenanceFrom);
@@ -135,5 +160,25 @@ export const rootCommand: CliCommand = (cmd) => {
       // #endregion
 
       await Promise.all(writings);
-    });
+    })
+    .example(
+      (bin) =>
+        `
+# INPUTS
+  // TODO
+# OUTPATH
+  // TODO
+# REMAP
+  // TODO
+# Repack
+  Rename a package
+
+    $ ${bin} bar-0.0.0.tgz --name foo
+  
+  Re-version a package
+
+    $ ${bin} bar-0.0.0.tgz --version 0.1.1
+
+`
+    );
 };

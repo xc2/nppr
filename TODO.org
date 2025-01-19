@@ -11,3 +11,4 @@ This depends on the registry, I'm not such glad to support this.
 ** TODO DX Improvement
 - [ ] Add logger to =nppr-core= and =nppr=
 ** TODO generate publishing script for running everywhere
+** TODO supports otp

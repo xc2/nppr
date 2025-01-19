@@ -49,7 +49,7 @@ test("provenance", async ({ file, signal }) => {
   stubEnvs({ SIGSTORE_ID_TOKEN: simpleJWT({ sub: "foo", name: "bar" }) }, signal);
   const sigstore = file("sigstore.json");
   const subject = await generateSubject(BasicTarballPath);
-  await runCli([BasicTarballPath, "--provenance", sigstore, "--output", "none"]);
+  await runCli([BasicTarballPath, "--provenance", sigstore, "--tarball", "none"]);
   const bundle = JSON.parse(await readFile(sigstore, "utf8"));
   const payload = JSON.parse(Buffer.from(bundle.dsseEnvelope.payload, "base64").toString("utf-8"));
 
@@ -61,7 +61,7 @@ test("provenance", async ({ file, signal }) => {
 describe("repack", () => {
   test("output to file", async ({ file }) => {
     const tarball = file("repacked.tgz");
-    await runCli([BasicTarballPath, "--output", tarball]);
+    await runCli([BasicTarballPath, "--tarball", tarball]);
     const manifest = await getManifest(inputSource(tarball));
     expect(manifest).toMatchObject({
       name: "barhop",
@@ -78,7 +78,7 @@ describe("repack", () => {
       "1.0.0",
       "--readme",
       ReadmeTemplate,
-      "--output",
+      "--tarball",
       tarball,
     ]);
     await expect(entryText(tarball, "README.md")).resolves.toMatchSnapshot();

@@ -26,7 +26,7 @@ export const rootCommand: CliCommand = (cmd) => {
       default: "nppr-out",
     })
     .option(
-      "--output [OUTPATH]",
+      "--tarball [OUTPATH]",
       "Repack/Copy packages to the specified path. Enabled by default if `--publish` is not set."
     )
     .option("--name <name>", "**[Repack]** with `package.json/name` overridden")
@@ -87,7 +87,7 @@ export const rootCommand: CliCommand = (cmd) => {
       const writings: PromiseLike<any>[] = [];
       const DefaultOutpathToken = options.publish ? "none" : "auto";
       const output = normalizeOutPath(
-        typeof options.output === "string" ? options.output : DefaultOutpathToken,
+        typeof options.tarball === "string" ? options.tarball : DefaultOutpathToken,
         "[name]-[version][extname]"
       );
       const provenanceOutput = normalizeOutPath(

@@ -1,8 +1,7 @@
 import { mkdir, readFile } from "node:fs/promises";
 import * as NodePath from "node:path";
-import * as process from "node:process";
 import { glob } from "glob";
-import { tryToNumber } from "nppr-core";
+import { NPPR_USER_AGENT, tryToNumber } from "nppr-core";
 import { attest } from "nppr-core/provenance";
 import { type PublishOptions, publish } from "nppr-core/publish";
 import { repack } from "nppr-core/repack";
@@ -148,6 +147,7 @@ export const rootCommand: CliCommand = (cmd) => {
           provenance: provenanceBundle.get.bind(provenanceBundle),
           token: await secretFrom(options.token),
           tag: options.tag,
+          npmVersion: `nppr/v1 ${NPPR_USER_AGENT}`,
           manifest: {
             keepFields: options.keepFields,
             additionalFields: options.addFields,

@@ -100,4 +100,4 @@ export function getPublishManifestFields() {
   ];
 }
 
-export const NPPR_USER_AGENT = "nppr/v1 (+https://github.com/xc2/nppr)";
+export const NPPR_USER_AGENT = "nppr-core/v1 (+https://github.com/xc2/nppr)";

@@ -7,5 +7,6 @@ export {
   inputSource,
   toPurl,
   type InputSource,
+  NPPR_USER_AGENT,
 } from "./utils";
 export { type Manifest, getManifest } from "./internals/package";

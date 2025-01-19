@@ -30,11 +30,11 @@ export class Package {
 
   constructor(
     input: string | number,
-    public readonly cwd = process.cwd()
+    public readonly context = process.cwd()
   ) {
     const p = tryToNumber(input);
     if (typeof p === "string") {
-      this.pathInfo = pathInfo(p, this.cwd);
+      this.pathInfo = pathInfo(p, this.context);
       this.input = this.pathInfo.fullpath;
     } else {
       this.input = p;
@@ -92,6 +92,6 @@ export class Package {
       }
       return `${value}`.replace(/[^0-9a-zA-Z-._]/g, "_");
     };
-    return NodePath.resolve(this.cwd, inlineTemplate(p, { escape: _escape })(variables));
+    return inlineTemplate(p, { escape: _escape })(variables);
   }
 }

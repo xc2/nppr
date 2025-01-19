@@ -41,7 +41,7 @@ async function runCli(args: string[]) {
 
   registerCommand(cli, "", rootCommand);
 
-  cli.parse([process.argv[0], "nppr", ...args], { run: false });
+  cli.parse([process.argv[0], "nppr", "--outbase", ".", ...args], { run: false });
   return cli.runMatchedCommand();
 }
 
@@ -49,7 +49,7 @@ test("provenance", async ({ file, signal }) => {
   stubEnvs({ SIGSTORE_ID_TOKEN: simpleJWT({ sub: "foo", name: "bar" }) }, signal);
   const sigstore = file("sigstore.json");
   const subject = await generateSubject(BasicTarballPath);
-  await runCli(["--provenance", sigstore, BasicTarballPath]);
+  await runCli([BasicTarballPath, "--provenance", sigstore, "--output", "none"]);
   const bundle = JSON.parse(await readFile(sigstore, "utf8"));
   const payload = JSON.parse(Buffer.from(bundle.dsseEnvelope.payload, "base64").toString("utf-8"));
 
@@ -61,7 +61,7 @@ test("provenance", async ({ file, signal }) => {
 describe("repack", () => {
   test("output to file", async ({ file }) => {
     const tarball = file("repacked.tgz");
-    await runCli(["--repack", "--output", tarball, BasicTarballPath]);
+    await runCli([BasicTarballPath, "--output", tarball]);
     const manifest = await getManifest(inputSource(tarball));
     expect(manifest).toMatchObject({
       name: "barhop",
@@ -71,7 +71,7 @@ describe("repack", () => {
   test("readme file", async ({ file }) => {
     const tarball = file("repacked.tgz");
     await runCli([
-      "--repack",
+      BasicTarballPath,
       "--name",
       "foo",
       "--version",
@@ -80,7 +80,6 @@ describe("repack", () => {
       ReadmeTemplate,
       "--output",
       tarball,
-      BasicTarballPath,
     ]);
     await expect(entryText(tarball, "README.md")).resolves.toMatchSnapshot();
   });
@@ -91,8 +90,8 @@ describe("repack", () => {
     const unscoped = Math.random().toString(36).slice(2);
     const name = `@${scope}/${unscoped}`;
     const version = [0, 0, 0].map((_) => Math.round(Math.random() * 10)).join(".");
-    const tarball = file(`${scope}-${unscoped}-${version}_repacked.tgz`);
-    await runCli(["--repack", "--name", name, "--version", version, source, "--output"]);
+    const tarball = file(`${scope}-${unscoped}-${version}.tgz`);
+    await runCli([source, "--name", name, "--version", version]);
     const manifest = await getManifest(inputSource(tarball));
     expect(manifest).toMatchObject({
       name,
@@ -120,7 +119,7 @@ describe("publish", () => {
     });
     expect(nockScope.isDone()).toBeFalsy();
 
-    await runCli(["--publish", "--registry", registry, BasicTarballPath]);
+    await runCli([BasicTarballPath, "--publish", "--registry", registry]);
     expect(nockScope.isDone()).toBeTruthy();
   });
   test("repack and publish", async () => {
@@ -130,15 +129,7 @@ describe("publish", () => {
     });
     expect(nockScope.isDone()).toBeFalsy();
 
-    await runCli([
-      "--repack",
-      "--name",
-      packageName,
-      "--publish",
-      "--registry",
-      registry,
-      BasicTarballPath,
-    ]);
+    await runCli([BasicTarballPath, "--name", packageName, "--publish", "--registry", registry]);
     expect(nockScope.isDone()).toBeTruthy();
   });
   test("repack, provenance, and publish", async ({ signal }) => {
@@ -164,14 +155,13 @@ describe("publish", () => {
     expect(nockScope.isDone()).toBeFalsy();
 
     await runCli([
-      "--repack",
+      BasicTarballPath,
       "--name",
       packageName,
       "--provenance",
       "--publish",
       "--registry",
       registry,
-      BasicTarballPath,
     ]);
     expect(nockScope.isDone()).toBeTruthy();
   });

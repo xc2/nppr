@@ -44,6 +44,26 @@ jobs:
           --add-fields.hello=world \
           --provenance 'ppp.sigstore' \
           --generate-publish
+        
+        cat artifacts/publish.cjs.json
+        node artifacts/publish.cjs -h
+        
+        node ./packages/nppr/nppr.cjs 'packages/*/*.tgz' \
+          --outbase artifacts \
+          --readme PACKAGE.md \
+          --name '@xc2/playground-[unscopedPart]' \
+          --version "$PKG_VER" \
+          --tarball "[name]-[version]-test[extname]" \
+          --tag "$BR_SLUG" \
+          --registry 'https://npm.pkg.github.com' \
+          --add-fields.foo=bar \
+          --add-fields.hello=world \
+          --provenance 'gh.sigstore' \
+          --generate-publish publish-github.cjs
+        cat artifacts/publish-github.cjs.json
+        node artifacts/publish-github.cjs -h
+        
+        ls -allh artifacts
     - uses: actions/upload-artifact@v4
       with:
         name: artifacts
@@ -52,6 +72,7 @@ jobs:
   play-publish:
     needs: play
     runs-on: ubuntu-latest
+    environment: playground
     steps:
     - uses: actions/download-artifact@v4
       with:
@@ -59,13 +80,15 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 20
-    - env:
+    - name: Publish to NPM
+      env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN_PLAY }}
       run: |
-        ls -allh
-        cat publish.cjs.json
-        echo 'node publish.cjs -h'
-        node publish.cjs -h
-        echo 'publish'
         node publish.cjs
+        
+    - name: Publish to Github Packages
+      env:
+        NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        node publish-github.cjs
         

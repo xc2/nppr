@@ -59,6 +59,7 @@ jobs:
     - env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN_PLAY }}
       run: |
+        ls -allh
         ls -allh artifacts
         cat artifacts/publish.cjs.json
         node artifacts/publish.cjs -h

@@ -217,7 +217,7 @@ ${pub.inputs?.length ? `             ^ ${chalk.dim("Default INPUTS:")} ${pub.inp
       // #region Generate Publish
       if (publishScript) {
         const npprSource = new URL(import.meta.url).pathname;
-        const npprTarget = ".nppr-bin.cjs";
+        const npprTarget = "nppr-bin.cjs";
         const extname = NodePath.extname(publishScript);
         const scriptPath = relativePathAny(npprTarget, publishScript);
         const content = [

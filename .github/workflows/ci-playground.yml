@@ -69,12 +69,10 @@ jobs:
         name: artifacts
         path: artifacts
 
-  play-publish:
+  publish-npm:
     needs: play
     runs-on: ubuntu-latest
     environment: playground
-    permissions:
-      packages: write
     steps:
     - uses: actions/download-artifact@v4
       with:
@@ -85,12 +83,22 @@ jobs:
     - name: Publish to NPM
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN_PLAY }}
-      run: |
-        node publish.cjs
-        
-    - name: Publish to Github Packages
-      env:
-        NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        node publish-github.cjs
-        
+      run: node publish.cjs
+
+  publish-github:
+    needs: play
+    runs-on: ubuntu-latest
+    environment: playground
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: artifacts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Publish to Github Packages
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node publish-github.cjs

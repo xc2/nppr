@@ -27,16 +27,79 @@ jobs:
         cd packages/nppr-core && npm pack && cd ../..
 
     - name: Repack
-      env:
-        NPM_TOKEN: ${{ secrets.NPM_TOKEN_PLAY }}
       run: |
         BR_SLUG=${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}
-        BR_SLUG=$(echo -n "$BR_SLUG" | perl -pe 's/[^a-zA-Z-_]/-/g' | cut -c1-20)
+        BR_SLUG=$(echo -n "$BR_SLUG" | perl -pe 's/[^a-zA-Z0-9-_]/-/g' | cut -c1-20)
         PKG_VER="0.0.0-${BR_SLUG}.${GITHUB_RUN_ID}"
         rm -rf artifacts
         mkdir artifacts
-        node ./packages/nppr/nppr.cjs 'packages/*/*.tgz' --repack --readme PACKAGE.md --name '@canary-109cafe/[unscopedPart]' --version "$PKG_VER" --output "artifacts/[name]-[version][extname]" --provenance 'artifacts/provenances.sigstore'
+        node ./packages/nppr/nppr.cjs 'packages/*/*.tgz' \
+          --outbase artifacts \
+          --readme PACKAGE.md \
+          --name '@canary-109cafe/[unscopedPart]-play' \
+          --version "$PKG_VER" \
+          --tarball "[name]-[version]-test[extname]" \
+          --tag "$BR_SLUG" \
+          --add-fields.foo=bar \
+          --add-fields.hello=world \
+          --provenance 'ppp.sigstore' \
+          --generate-publish
+        
+        cat artifacts/publish.cjs.json
+        node artifacts/publish.cjs -h
+        
+        node ./packages/nppr/nppr.cjs 'packages/*/*.tgz' \
+          --outbase artifacts \
+          --readme PACKAGE.md \
+          --name '@xc2/playground-[unscopedPart]' \
+          --version "$PKG_VER" \
+          --tarball "[name]-[version]-test[extname]" \
+          --tag "$BR_SLUG" \
+          --registry 'https://npm.pkg.github.com' \
+          --add-fields.foo=bar \
+          --add-fields.hello=world \
+          --provenance 'gh.sigstore' \
+          --generate-publish publish-github.cjs
+        cat artifacts/publish-github.cjs.json
+        node artifacts/publish-github.cjs -h
+        
         ls -allh artifacts
+    - uses: actions/upload-artifact@v4
       with:
         name: artifacts
         path: artifacts
+
+# This job can be executed outside GitHub Actions.
+  publish-npm:
+    needs: play
+    runs-on: ubuntu-latest
+    environment: playground
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: artifacts
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - name: Publish to NPM
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN_PLAY }}
+      run: node publish.cjs
+
+  publish-github:
+    needs: play
+    runs-on: ubuntu-latest
+    environment: playground
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: artifacts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Publish to Github Packages
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node publish-github.cjs

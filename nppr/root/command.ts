@@ -55,14 +55,12 @@ ${pub.inputs?.length ? `             ^ ${chalk.dim("Default INPUTS:")} ${pub.inp
       );
   }
   if (!pubOnly) {
-    command.option("--publish", "**Publish** the input or repacked packages", {
-      default: pub.publish,
-    });
+    command.option("--publish", "**Publish** the input or repacked packages");
     command.option("--generate-publish [OUTPATH]", "Generate a script to publish the packages");
   }
   command
     .option("--registry <url>", "**[Publish]** to specific registry", {
-      default: "https://registry.npmjs.org",
+      default: pub.registry ?? "https://registry.npmjs.org",
     })
     .option(
       "--token <TOKENFROM>",

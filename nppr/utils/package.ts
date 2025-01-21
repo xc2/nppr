@@ -68,13 +68,12 @@ export class Package {
     }
   }
 
-  async output(p?: string) {
-    const outputPath = await this.getOutputPath(p);
-    return this.tee().pipeTo(Writable.toWeb(createWriteStream(outputPath)));
+  writeTo(realPath: string) {
+    return this.tee().pipeTo(Writable.toWeb(createWriteStream(realPath)));
   }
 
   // TODO: move along and add tests
-  async getOutputPath(p: string = "[path]/[name]-[version][extname]") {
+  async renderOutputPath(p: string = "[path]/[name]-[version][extname]") {
     const manifest = await this.manifest;
     const name = packageName(manifest.name);
     const variables = {

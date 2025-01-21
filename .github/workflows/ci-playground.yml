@@ -35,7 +35,14 @@ jobs:
         PKG_VER="0.0.0-${BR_SLUG}.${GITHUB_RUN_ID}"
         rm -rf artifacts
         mkdir artifacts
-        node ./packages/nppr/nppr.cjs 'packages/*/*.tgz' --readme PACKAGE.md --name '@canary-109cafe/[unscopedPart]' --version "$PKG_VER" --output "artifacts/[name]-[version][extname]" --provenance 'artifacts/provenances.sigstore' --generate-publish
+        node ./packages/nppr/nppr.cjs 'packages/*/*.tgz' \
+          --outbase artifacts \
+          --readme PACKAGE.md \
+          --name '@canary-109cafe/[unscopedPart]' \
+          --version "$PKG_VER" \
+          --tarball "[name]-[version]-test[extname]" \
+          --provenance 'ppp.sigstore' \
+          --generate-publish
         ls -allh artifacts
     - uses: actions/upload-artifact@v4
       with:

@@ -34,3 +34,4 @@ temp/
 !**/__fixtures__/**/*.tgz
 /a.ts
 /packages/
+/nppr-out/

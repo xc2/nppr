@@ -69,6 +69,7 @@ jobs:
         name: artifacts
         path: artifacts
 
+# This job can be executed outside GitHub Actions.
   publish-npm:
     needs: play
     runs-on: ubuntu-latest

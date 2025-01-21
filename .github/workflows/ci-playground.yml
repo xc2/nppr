@@ -73,6 +73,8 @@ jobs:
     needs: play
     runs-on: ubuntu-latest
     environment: playground
+    permissions:
+      packages: write
     steps:
     - uses: actions/download-artifact@v4
       with:

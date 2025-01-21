@@ -64,5 +64,8 @@ jobs:
       run: |
         ls -allh
         cat publish.cjs.json
+        echo 'node publish.cjs -h'
         node publish.cjs -h
+        echo 'publish'
+        node publish.cjs
         

@@ -39,6 +39,9 @@ jobs:
           --name '@canary-109cafe/[unscopedPart]-play' \
           --version "$PKG_VER" \
           --tarball "[name]-[version]-test[extname]" \
+          --tag "$BR_SLUG" \
+          --add-fields.foo=bar \
+          --add-fields.hello=world \
           --provenance 'ppp.sigstore' \
           --generate-publish
     - uses: actions/upload-artifact@v4
@@ -60,7 +63,6 @@ jobs:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN_PLAY }}
       run: |
         ls -allh
-        ls -allh artifacts
-        cat artifacts/publish.cjs.json
-        node artifacts/publish.cjs -h
+        cat publish.cjs.json
+        node publish.cjs -h
         

@@ -19,6 +19,7 @@
     "@types/libnpmpublish": "^9.0.1",
     "@types/node": "^22.10.5",
     "@types/npm-package-arg": "^6.1.4",
+    "@types/semver": "^7.5.8",
     "@types/ssri": "^7.1.5",
     "cac": "^6.7.14",
     "chalk": "^5.4.1",
@@ -27,6 +28,8 @@
     "libnpmpublish": "^11.0.0",
     "nock": "^13.5.6",
     "npm-package-arg": "^12.0.1",
+    "semver": "^7.6.3",
+    "string-width": "^7.2.0",
     "tar": "^7.4.3",
     "typescript": "^5.7.2",
     "vitest-types": "^0.1.3"

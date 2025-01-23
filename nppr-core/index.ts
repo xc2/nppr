@@ -2,7 +2,9 @@ export { tryToNumber } from "./internals/lang";
 export { duplicate } from "./internals/stream";
 export {
   inlineTemplate,
-  packageName,
+  extractName,
+  extractVersion,
+  getPackageTokens,
   template,
   inputSource,
   toPurl,

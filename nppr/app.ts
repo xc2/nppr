@@ -1,7 +1,8 @@
+import { EOL } from "node:os";
 import { cac } from "cac";
 import chalk from "chalk";
 import { rootCommand } from "./root/command";
-import { registerCommand } from "./utils/cac";
+import { getOptionsForUsage, registerCommand, simplyFold } from "./utils/cac";
 
 export function createCli() {
   const cli = cac("nppr");
@@ -39,28 +40,53 @@ export function createCli() {
       }
     }
     for (let i = 0; i < sections.length; i++) {
-      const { title, body } = sections[i];
-      if (title) {
-        sections[i].title = chalk.bold(title.toUpperCase());
+      let { title, body } = sections[i];
+
+      if (title === "Options") {
+        const { options, maxColumn } = getOptionsForUsage(cli);
+
+        const details = options
+          .map((option) => {
+            let nameRow = chalk.bold(
+              option.rawName.replace(/([\[<])([^\]>]+)([\]>])/g, (_, p1, p2, p3) => {
+                const content = `${p1}${p2}${option.config.default ? `=${option.config.default}` : ""}${p3}`;
+
+                return chalk.bold.reset(p1 === "[" ? chalk.dim(content) : content);
+              })
+            );
+            const bodyRows: string[] = [];
+            bodyRows.push(option.description);
+            if (option.config.default) {
+            }
+
+            return [simplyFold(nameRow, 2), simplyFold(bodyRows.filter(Boolean).join(EOL), 6)]
+              .filter(Boolean)
+              .join(EOL);
+          })
+          .join(`${EOL}${EOL}`);
+
+        body = details;
       }
+
       if (body) {
-        let b = body
+        body = body
           .replace(/^\n+/, "")
           .replace(/\n+$/, "")
-          .replace(/^(\s*)\$ /gm, (_, p1) => {
-            return `${p1}${chalk.dim("$")} `;
+          //          111     22222  3333
+          .replace(/^(\s*)\$ ([^#]+)(# .+)?/gm, (_, p1, p2, p3) => {
+            return `${p1}${chalk.dim("$")} ${p2}${p3 ? chalk.dim(p3) : ""}`;
           })
           .replace(/\*\*([^*]+)\*\*/g, (_, p1) => {
             return chalk.bold(p1);
+          })
+          .replace(/`([^`]+)`/g, (_, p1) => {
+            return chalk.dim(p1);
           });
-        if (title === "Options") {
-          b = b.replace(/(\S)(\s+)\(default: (.+?)\)/gm, (_, p1, p2, p3) => {
-            const d = ["."].includes(p1) ? p1 : `${p1}.`;
-            return `${d}${p2}${chalk.dim(`DEF: `)}${chalk.reset(p3)}`;
-          });
-        }
-        sections[i].body = b;
       }
+      if (title) {
+        sections[i].title = chalk.bold(title.toUpperCase());
+      }
+      sections[i].body = body;
     }
   });
 

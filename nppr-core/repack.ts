@@ -1,11 +1,11 @@
 import compare from "just-compare";
+import type { MaybePromise } from "nppr-core/internals/lang";
 import type { ReadEntry } from "tar";
 import { PackageJsonPath, PackagePackOptions } from "./internals/constants";
-import type { MaybePromise } from "./internals/lang/type-helpers";
 import { type Manifest, getManifest, mutateDependencies, mutateFields } from "./internals/package";
 import { type StreamReader, duplicate } from "./internals/stream";
 import { type TarTransformer, transformTarball } from "./internals/tar";
-import { type InputSource, inlineTemplate, inputSource, packageName, template } from "./utils";
+import { type InputSource, getPackageTokens, inlineTemplate, inputSource, template } from "./utils";
 
 export interface RepackPackage extends RepackOptions {
   source: InputSource;
@@ -80,7 +80,7 @@ export function createRepack(options: RepackOptions = {}) {
         manifest = options.packageJson;
       }
     }
-    const tplVars = { ...manifest, ...packageName(manifest.name) };
+    const tplVars = getPackageTokens(manifest);
     mutateFields(manifest, {
       name: options.name && inlineTemplate(options.name)(tplVars),
       version: options.version && inlineTemplate(options.version)(tplVars),

@@ -12,3 +12,4 @@ This depends on the registry, I'm not such glad to support this.
 - [ ] Add logger to =nppr-core= and =nppr=
 ** TODO generate publishing script for running everywhere
 ** TODO supports otp
+** TODO allow remote tarballs as source

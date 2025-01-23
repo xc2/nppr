@@ -1,5 +1,6 @@
 import { createReadStream } from "node:fs";
 import npa from "npm-package-arg";
+import coerceVersion from "semver/functions/coerce";
 import { tryToNumber } from "./internals/lang";
 import { template as _template } from "./internals/lang/template";
 import type { Manifest } from "./internals/package";
@@ -58,17 +59,42 @@ export function toPurl(manifest: Pick<Manifest, "name" | "version">) {
   return npa.toPurl(spec) as string;
 }
 
-export function packageName(name: string) {
+export function getPackageTokens(manifest: Manifest) {
+  const { name, version } = manifest;
+  return {
+    ...manifest,
+    names: extractName(name),
+    versions: extractVersion(version),
+  };
+}
+
+export function extractName(name: string) {
   if (name.startsWith("@")) {
     const [scope, unscoped] = name.slice(1).split("/");
     return {
       scope,
       unscoped,
-      pathPart: `${scope}-${unscoped}`,
-      unscopedPart: `${scope}__${unscoped}`,
+      forPath: `${scope}-${unscoped}`,
+      forUnscoped: `${scope}__${unscoped}`,
     };
   }
-  return { scope: "", unscoped: name, pathPart: name, unscopedPart: name };
+  return { scope: "", unscoped: name, "for-path": name, "for-unscoped": name };
+}
+export function extractVersion(version: string) {
+  const v = coerceVersion(version, { includePrerelease: true, loose: true });
+  if (!v) {
+    return {};
+  }
+  return {
+    major: v.major,
+    minor: v.minor,
+    patch: v.patch,
+    version: `${v.major}.${v.minor}.${v.patch}`,
+    prerelease: v.prerelease.join("."),
+    prereleases: v.prerelease,
+    build: v.build.join("."),
+    builds: v.build,
+  };
 }
 
 export function getPublishManifestFields() {

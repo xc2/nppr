@@ -32,20 +32,27 @@ export const rootCommand: CliCommand = (cmd) => {
   command.usage(`[...**INPUTS**] [**OPTIONS**]
 ${pub.inputs?.length ? `             ^ ${chalk.dim("Default INPUTS:")} ${pub.inputs.join(" ")}` : ""}
 
+
 `);
   if (!pubOnly) {
     command
-      .option("--outbase [path]", "Base path of all **OUTPATH** options.", {
+      .option("--outbase [path]", "Base path of all output options.", {
         default: "nppr-out",
       })
       .option(
-        "--tarball [OUTPATH]",
-        "Repack/Copy packages to the specified path. Enabled by default if `--publish` is not set."
+        "--tarball [filename]",
+        `Repack/Copy packages to the specified path. Relative to outbase.
+Can be \`none\` to disable output, \`auto\` to use default and template string like \`[basename]-foobar[extname]\`. See available tokens in **PATH TOKENS** and **PACKAGE TOKENS** sections below.
+**Default:** \`[name]-[version][extname]\` when \`--publish\` is not set, otherwise \`none\`.`
       )
-      .option("--name <name>", "**[Repack]** with `package.json/name` overridden")
-      .option("--version <version>", "**[Repack]** with `package.json/version` overridden")
       .option(
-        "--readme <frompath>",
+        "--name <name>",
+        `Repack tarballs with \`package.json/name\` overridden.
+Can be a template string like \`@canary-109cafe/[unscopedPart]\`. See available tokens in **PACKAGE TOKENS** section below.`
+      )
+      .option("--version <TPL>", "Repack tarballs with `package.json/version` overridden")
+      .option(
+        "--readme <TPLPATH>",
         "**[Repack]** with `README.md` overridden. Should be a file path"
       )
       .option("--remap <REMAP>", "**[Repack]** with dependencies/optionalDependencies overridden")
@@ -238,30 +245,6 @@ ${pub.inputs?.length ? `             ^ ${chalk.dim("Default INPUTS:")} ${pub.inp
         );
       }
       // #endregion
-    })
-    .example((bin) =>
-      [
-        `# INPUTS
-  // TODO
-`,
-        !pubOnly &&
-          `# OUTPATH
-  // TODO
-`,
-        !pubOnly &&
-          `# REMAP
-  // TODO
-`,
-        `# TOKENFROM
-  // TODO
-`,
-        !pubOnly &&
-          `# Repack
-  // TODO
-`,
-      ]
-        .filter(Boolean)
-        .join("\n")
-    );
+    });
   return command;
 };

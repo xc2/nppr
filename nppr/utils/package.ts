@@ -4,9 +4,9 @@ import { Writable } from "node:stream";
 import {
   type Manifest,
   getManifest,
+  getPackageTokens,
   inlineTemplate,
   inputSource,
-  packageName,
   tryToNumber,
 } from "nppr-core";
 
@@ -75,19 +75,17 @@ export class Package {
   // TODO: move along and add tests
   async renderOutputPath(p: string = "[path]/[name]-[version][extname]") {
     const manifest = await this.manifest;
-    const name = packageName(manifest.name);
+    const pkg = getPackageTokens(manifest);
     const variables = {
-      ...manifest,
-      scope: name.scope,
-      unscoped: name.unscoped,
+      ...pkg,
       fullpath: this.pathInfo?.fullpath ?? "",
       path: this.pathInfo?.path ?? "",
       extname: this.pathInfo?.extname ?? ".tgz",
-      basename: this.pathInfo?.basename ?? `${name.pathPart}-${manifest.version}`,
+      basename: this.pathInfo?.basename ?? `${pkg.names["for-path"]}-${pkg.version}`,
     };
     const _escape = (value: any, key: string) => {
       if (key === "name") {
-        return packageName(value).pathPart;
+        return pkg.names["for-path"] ?? "";
       }
       return `${value}`.replace(/[^0-9a-zA-Z-._]/g, "_");
     };

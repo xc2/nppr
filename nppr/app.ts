@@ -55,9 +55,7 @@ export function createCli() {
               })
             );
             const bodyRows: string[] = [];
-            bodyRows.push(option.description);
-            if (option.config.default) {
-            }
+            bodyRows.push(option.description.trim());
 
             return [simplyFold(nameRow, 2), simplyFold(bodyRows.filter(Boolean).join(EOL), 6)]
               .filter(Boolean)

@@ -48,14 +48,26 @@ Can be \`none\` to disable output, \`auto\` to use default and template string l
       .option(
         "--name <name>",
         `Repack tarballs with \`package.json/name\` overridden.
-Can be a template string like \`@canary-109cafe/[unscopedPart]\`. See available tokens in **PACKAGE TOKENS** section below.`
+Can be a template string like \`@canary-109cafe/[for-unscoped]\`. See available tokens in **PACKAGE TOKENS** section below.`
       )
-      .option("--version <TPL>", "Repack tarballs with `package.json/version` overridden")
       .option(
-        "--readme <TPLPATH>",
-        "**[Repack]** with `README.md` overridden. Should be a file path"
+        "--version <version>",
+        `Repack tarballs with \`package.json/version\` overridden.
+Can be a template string like \`[versions.core]-beta.1\`. See available tokens in **PACKAGE TOKENS** section below.`
       )
-      .option("--remap <REMAP>", "**[Repack]** with dependencies/optionalDependencies overridden")
+      .option(
+        "--readme <path>",
+        `Repack with \`README.md\` overridden, should be a file path.
+Can use template tokens in the file. See available tokens in **PACKAGE TOKENS** section below.`
+      )
+      .option(
+        "--remap <object>",
+        `Repack with overriden \`dependencies\` and \`optionalDependencies\`.
+For example, running with the following command will replace \`@babel/core\` with \`7.1.7\` version in \`package.json\` under \`dependencies\` and \`optionalDependencies\`.
+
+  $ nppr --remap.@babel/core 7.1.7
+`
+      )
       .option(
         "--provenance [OUTPATH]",
         "**[Provenance]** Generate and attest the provenance of the package. Write to disk by default if `--publish` is not set."

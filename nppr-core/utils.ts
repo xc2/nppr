@@ -89,7 +89,7 @@ export function extractVersion(version: string) {
     major: v.major,
     minor: v.minor,
     patch: v.patch,
-    version: `${v.major}.${v.minor}.${v.patch}`,
+    core: `${v.major}.${v.minor}.${v.patch}`,
     prerelease: v.prerelease.join("."),
     prereleases: v.prerelease,
     build: v.build.join("."),
